@@ -1,0 +1,6 @@
+@LEAVEMATE_BACKEND_HostAddress = http://localhost:5073
+
+GET {{LEAVEMATE_BACKEND_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

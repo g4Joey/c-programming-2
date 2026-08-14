@@ -6,6 +6,7 @@ using LeaveMate.DTOs;
 using LeaveMate.Exceptions;
 using LeaveMate.Models;
 using LeaveMate.Services;
+using LeaveMate.Services.Notifications;
 using LeaveMate.Services.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +14,8 @@ using Microsoft.EntityFrameworkCore;
 namespace LeaveMate.Controllers
 {
     /// <summary>
-    /// Controller logic for the Lead Backend Developer track: wires the
-    /// validation engine and workflow service to HTTP endpoints consumed by
-    /// the Razor/Blazor front end.
+    /// Controller logic for leave requests.
+    /// Handles validation, workflow decisions, notifications and audit logging.
     /// </summary>
     [ApiController]
     [Route("api/leave-requests")]
@@ -24,30 +24,51 @@ namespace LeaveMate.Controllers
         private readonly ApplicationDbContext _db;
         private readonly ILeaveValidationService _validationService;
         private readonly LeaveWorkflowService _workflowService;
+        private readonly LeaveNotificationHandler _notificationHandler;
+        private readonly IAuditLogService _auditLogService;
 
         public LeaveRequestsController(
             ApplicationDbContext db,
             ILeaveValidationService validationService,
-            LeaveWorkflowService workflowService)
+            LeaveWorkflowService workflowService,
+            LeaveNotificationHandler notificationHandler,
+            IAuditLogService auditLogService)
         {
             _db = db;
             _validationService = validationService;
             _workflowService = workflowService;
+            _notificationHandler = notificationHandler;
+            _auditLogService = auditLogService;
         }
 
-        // GET api/leave-requests?employeeId=6&status=PendingSupervisorApproval
+        // ============================================================
+        // GET: api/leave-requests
+        // ============================================================
+
         [HttpGet]
         public async Task<ActionResult<object>> GetAll(
-            [FromQuery] int? employeeId, [FromQuery] string? status)
+            [FromQuery] int? employeeId,
+            [FromQuery] string? status)
         {
-            var query = _db.LeaveRequests.Include(r => r.Employee).AsQueryable();
+            var query = _db.LeaveRequests
+                .Include(r => r.Employee)
+                .AsQueryable();
 
             if (employeeId.HasValue)
-                query = query.Where(r => r.EmployeeId == employeeId.Value);
+            {
+                query = query.Where(
+                    r => r.EmployeeId == employeeId.Value);
+            }
 
             if (!string.IsNullOrWhiteSpace(status)
-                && Enum.TryParse<Enums.LeaveStatus>(status, true, out var parsedStatus))
-                query = query.Where(r => r.Status == parsedStatus);
+                && Enum.TryParse<Enums.LeaveStatus>(
+                    status,
+                    true,
+                    out var parsedStatus))
+            {
+                query = query.Where(
+                    r => r.Status == parsedStatus);
+            }
 
             var results = await query
                 .OrderByDescending(r => r.SubmittedAtUtc)
@@ -57,19 +78,32 @@ namespace LeaveMate.Controllers
             return Ok(results);
         }
 
-        // GET api/leave-requests/5
+        // ============================================================
+        // GET: api/leave-requests/{id}
+        // ============================================================
+
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<LeaveRequestResponseDto>> GetById(int id)
+        public async Task<ActionResult<LeaveRequestResponseDto>> GetById(
+            int id)
         {
-            var request = await _db.LeaveRequests.Include(r => r.Employee)
+            var request = await _db.LeaveRequests
+                .Include(r => r.Employee)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (request is null) return NotFound();
-            return Ok(LeaveRequestResponseDto.FromEntity(request));
+            if (request is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(
+                LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests
-        // Runs the Context-Aware Validation Engine before persisting anything.
+        // ============================================================
+        // POST: api/leave-requests
+        // Create / submit leave request
+        // ============================================================
+
         [HttpPost]
         public async Task<ActionResult<LeaveRequestResponseDto>> Create(
             [FromBody] CreateLeaveRequestDto dto)
@@ -83,84 +117,252 @@ namespace LeaveMate.Controllers
                 Reason = dto.Reason
             };
 
-            var validation = await _validationService.ValidateAsync(request);
+            // --------------------------------------------
+            // 1. Validate leave request
+            // --------------------------------------------
+
+            var validation =
+                await _validationService.ValidateAsync(request);
+
             if (!validation.IsValid)
             {
-                return UnprocessableEntity(new { errors = validation.Errors });
+                return UnprocessableEntity(
+                    new { errors = validation.Errors });
             }
 
+            // --------------------------------------------
+            // 2. Submit through workflow
+            // --------------------------------------------
+
             _workflowService.Submit(request);
+
+            // --------------------------------------------
+            // 3. Save leave request
+            // --------------------------------------------
 
             _db.LeaveRequests.Add(request);
             await _db.SaveChangesAsync();
 
-            var saved = await _db.LeaveRequests.Include(r => r.Employee)
+            // --------------------------------------------
+            // 4. Audit log
+            // --------------------------------------------
+
+            await _auditLogService.LogAsync(
+                request.Id,
+                request.EmployeeId,
+                "Leave Request Submitted",
+                $"Leave request #{request.Id} was submitted.");
+
+            // --------------------------------------------
+            // 5. Load employee information
+            // --------------------------------------------
+
+            var saved = await _db.LeaveRequests
+                .Include(r => r.Employee)
                 .FirstAsync(r => r.Id == request.Id);
 
-            return CreatedAtAction(nameof(GetById), new { id = request.Id },
+            // --------------------------------------------
+            // 6. Notification
+            // --------------------------------------------
+
+            await _notificationHandler.NotifySubmissionAsync(
+                saved,
+                $"Employee-{saved.EmployeeId}");
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = request.Id },
                 LeaveRequestResponseDto.FromEntity(saved));
         }
 
-        // POST api/leave-requests/5/supervisor-decision
+        // ============================================================
+        // POST: api/leave-requests/{id}/supervisor-decision
+        // ============================================================
+
         [HttpPost("{id:int}/supervisor-decision")]
-        public async Task<IActionResult> SupervisorDecision(int id, [FromBody] LeaveDecisionDto dto)
+        public async Task<IActionResult> SupervisorDecision(
+            int id,
+            [FromBody] LeaveDecisionDto dto)
         {
-            var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
-            if (request is null) return NotFound();
+            var request = await _db.LeaveRequests
+                .Include(r => r.Employee)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request is null)
+            {
+                return NotFound();
+            }
 
             try
             {
                 await _workflowService.ApplySupervisorDecisionAsync(
-                    request, dto.DecidedByEmployeeId, dto.Approve, dto.Comment);
+                    request,
+                    dto.DecidedByEmployeeId,
+                    dto.Approve,
+                    dto.Comment);
             }
             catch (WorkflowException ex)
             {
-                return Conflict(new { error = ex.Message });
+                return Conflict(
+                    new { error = ex.Message });
             }
 
+            // --------------------------------------------
+            // Save workflow change
+            // --------------------------------------------
+
             await _db.SaveChangesAsync();
-            return Ok(LeaveRequestResponseDto.FromEntity(request));
+
+            // --------------------------------------------
+            // Audit supervisor decision
+            // --------------------------------------------
+
+            var action = dto.Approve
+                ? "Supervisor Approved Leave"
+                : "Supervisor Rejected Leave";
+
+            await _auditLogService.LogAsync(
+                request.Id,
+                dto.DecidedByEmployeeId,
+                action,
+                dto.Comment);
+
+            // --------------------------------------------
+            // Notify employee
+            // --------------------------------------------
+
+            await _notificationHandler.NotifyDecisionAsync(
+                request,
+                $"Employee-{request.EmployeeId}",
+                dto.Approve,
+                dto.Comment);
+
+            return Ok(
+                LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests/5/hr-decision
+        // ============================================================
+        // POST: api/leave-requests/{id}/hr-decision
+        // ============================================================
+
         [HttpPost("{id:int}/hr-decision")]
-        public async Task<IActionResult> HrDecision(int id, [FromBody] LeaveDecisionDto dto)
+        public async Task<IActionResult> HrDecision(
+            int id,
+            [FromBody] LeaveDecisionDto dto)
         {
-            var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
-            if (request is null) return NotFound();
+            var request = await _db.LeaveRequests
+                .Include(r => r.Employee)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request is null)
+            {
+                return NotFound();
+            }
 
             try
             {
                 await _workflowService.ApplyHrDecisionAsync(
-                    request, dto.DecidedByEmployeeId, dto.Approve, dto.Comment);
+                    request,
+                    dto.DecidedByEmployeeId,
+                    dto.Approve,
+                    dto.Comment);
             }
             catch (WorkflowException ex)
             {
-                return Conflict(new { error = ex.Message });
+                return Conflict(
+                    new { error = ex.Message });
             }
 
+            // --------------------------------------------
+            // Save workflow change
+            // --------------------------------------------
+
             await _db.SaveChangesAsync();
-            return Ok(LeaveRequestResponseDto.FromEntity(request));
+
+            // --------------------------------------------
+            // Audit HR decision
+            // --------------------------------------------
+
+            var action = dto.Approve
+                ? "HR Approved Leave"
+                : "HR Rejected Leave";
+
+            await _auditLogService.LogAsync(
+                request.Id,
+                dto.DecidedByEmployeeId,
+                action,
+                dto.Comment);
+
+            // --------------------------------------------
+            // Notify employee
+            // --------------------------------------------
+
+            await _notificationHandler.NotifyDecisionAsync(
+                request,
+                $"Employee-{request.EmployeeId}",
+                dto.Approve,
+                dto.Comment);
+
+            return Ok(
+                LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests/5/recall
+        // ============================================================
+        // POST: api/leave-requests/{id}/recall
+        // ============================================================
+
         [HttpPost("{id:int}/recall")]
-        public async Task<IActionResult> Recall(int id, [FromQuery] int employeeId)
+        public async Task<IActionResult> Recall(
+            int id,
+            [FromQuery] int employeeId)
         {
-            var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
-            if (request is null) return NotFound();
+            var request = await _db.LeaveRequests
+                .Include(r => r.Employee)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request is null)
+            {
+                return NotFound();
+            }
 
             try
             {
-                _workflowService.Recall(request, employeeId);
+                _workflowService.Recall(
+                    request,
+                    employeeId);
             }
             catch (WorkflowException ex)
             {
-                return Conflict(new { error = ex.Message });
+                return Conflict(
+                    new { error = ex.Message });
             }
 
+            // --------------------------------------------
+            // Save recalled status
+            // --------------------------------------------
+
             await _db.SaveChangesAsync();
-            return Ok(LeaveRequestResponseDto.FromEntity(request));
+
+            // --------------------------------------------
+            // Audit recall
+            // --------------------------------------------
+
+            await _auditLogService.LogAsync(
+                request.Id,
+                employeeId,
+                "Leave Request Recalled",
+                $"Leave request #{request.Id} was recalled by the employee.");
+
+            // --------------------------------------------
+            // Notify employee about recall
+            // --------------------------------------------
+
+            await _notificationHandler.NotifyRecallAsync(
+                request,
+                $"Employee-{request.EmployeeId}");
+
+            return Ok(
+                LeaveRequestResponseDto.FromEntity(request));
         }
     }
 }
