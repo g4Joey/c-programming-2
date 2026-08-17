@@ -117,10 +117,6 @@ namespace LeaveMate.Controllers
                 Reason = dto.Reason
             };
 
-            // --------------------------------------------
-            // 1. Validate leave request
-            // --------------------------------------------
-
             var validation =
                 await _validationService.ValidateAsync(request);
 
@@ -130,44 +126,42 @@ namespace LeaveMate.Controllers
                     new { errors = validation.Errors });
             }
 
-            // --------------------------------------------
-            // 2. Submit through workflow
-            // --------------------------------------------
-
             _workflowService.Submit(request);
 
-            // --------------------------------------------
-            // 3. Save leave request
-            // --------------------------------------------
+            await using var transaction =
+                await _db.Database.BeginTransactionAsync();
 
-            _db.LeaveRequests.Add(request);
-            await _db.SaveChangesAsync();
+            try
+            {
+                _db.LeaveRequests.Add(request);
 
-            // --------------------------------------------
-            // 4. Audit log
-            // --------------------------------------------
+                // Save the leave request first so the ID is generated.
+                await _db.SaveChangesAsync();
 
-            await _auditLogService.LogAsync(
-                request.Id,
-                request.EmployeeId,
-                "Leave Request Submitted",
-                $"Leave request #{request.Id} was submitted.");
+                // Add audit record using the same DbContext.
+                await _auditLogService.LogAsync(
+                    request.Id,
+                    request.EmployeeId,
+                    "Leave Request Submitted",
+                    $"Leave request #{request.Id} was submitted.");
 
-            // --------------------------------------------
-            // 5. Load employee information
-            // --------------------------------------------
+                // Save the audit record inside the same transaction.
+                await _db.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
             var saved = await _db.LeaveRequests
                 .Include(r => r.Employee)
                 .FirstAsync(r => r.Id == request.Id);
 
-            // --------------------------------------------
-            // 6. Notification
-            // --------------------------------------------
-
-            await _notificationHandler.NotifySubmissionAsync(
-                saved,
-                $"Employee-{saved.EmployeeId}");
+            // Recipient is now resolved from the employee's email.
+            await _notificationHandler.NotifySubmissionAsync(saved);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -207,33 +201,35 @@ namespace LeaveMate.Controllers
                     new { error = ex.Message });
             }
 
-            // --------------------------------------------
-            // Save workflow change
-            // --------------------------------------------
+            await using var transaction =
+                await _db.Database.BeginTransactionAsync();
 
-            await _db.SaveChangesAsync();
+            try
+            {
+                var action = dto.Approve
+                    ? "Supervisor Approved Leave"
+                    : "Supervisor Rejected Leave";
 
-            // --------------------------------------------
-            // Audit supervisor decision
-            // --------------------------------------------
+                await _auditLogService.LogAsync(
+                    request.Id,
+                    dto.DecidedByEmployeeId,
+                    action,
+                    dto.Comment);
 
-            var action = dto.Approve
-                ? "Supervisor Approved Leave"
-                : "Supervisor Rejected Leave";
+                // Save workflow change and audit record together.
+                await _db.SaveChangesAsync();
 
-            await _auditLogService.LogAsync(
-                request.Id,
-                dto.DecidedByEmployeeId,
-                action,
-                dto.Comment);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
-            // --------------------------------------------
-            // Notify employee
-            // --------------------------------------------
-
+            // Recipient is resolved from request.Employee.Email.
             await _notificationHandler.NotifyDecisionAsync(
                 request,
-                $"Employee-{request.EmployeeId}",
                 dto.Approve,
                 dto.Comment);
 
@@ -273,33 +269,35 @@ namespace LeaveMate.Controllers
                     new { error = ex.Message });
             }
 
-            // --------------------------------------------
-            // Save workflow change
-            // --------------------------------------------
+            await using var transaction =
+                await _db.Database.BeginTransactionAsync();
 
-            await _db.SaveChangesAsync();
+            try
+            {
+                var action = dto.Approve
+                    ? "HR Approved Leave"
+                    : "HR Rejected Leave";
 
-            // --------------------------------------------
-            // Audit HR decision
-            // --------------------------------------------
+                await _auditLogService.LogAsync(
+                    request.Id,
+                    dto.DecidedByEmployeeId,
+                    action,
+                    dto.Comment);
 
-            var action = dto.Approve
-                ? "HR Approved Leave"
-                : "HR Rejected Leave";
+                // Save workflow change and audit record together.
+                await _db.SaveChangesAsync();
 
-            await _auditLogService.LogAsync(
-                request.Id,
-                dto.DecidedByEmployeeId,
-                action,
-                dto.Comment);
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
-            // --------------------------------------------
-            // Notify employee
-            // --------------------------------------------
-
+            // Recipient is resolved from request.Employee.Email.
             await _notificationHandler.NotifyDecisionAsync(
                 request,
-                $"Employee-{request.EmployeeId}",
                 dto.Approve,
                 dto.Comment);
 
@@ -337,29 +335,30 @@ namespace LeaveMate.Controllers
                     new { error = ex.Message });
             }
 
-            // --------------------------------------------
-            // Save recalled status
-            // --------------------------------------------
+            await using var transaction =
+                await _db.Database.BeginTransactionAsync();
 
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _auditLogService.LogAsync(
+                    request.Id,
+                    employeeId,
+                    "Leave Request Recalled",
+                    $"Leave request #{request.Id} was recalled by the employee.");
 
-            // --------------------------------------------
-            // Audit recall
-            // --------------------------------------------
+                // Save workflow change and audit record together.
+                await _db.SaveChangesAsync();
 
-            await _auditLogService.LogAsync(
-                request.Id,
-                employeeId,
-                "Leave Request Recalled",
-                $"Leave request #{request.Id} was recalled by the employee.");
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
 
-            // --------------------------------------------
-            // Notify employee about recall
-            // --------------------------------------------
-
-            await _notificationHandler.NotifyRecallAsync(
-                request,
-                $"Employee-{request.EmployeeId}");
+            // Recipient is resolved from request.Employee.Email.
+            await _notificationHandler.NotifyRecallAsync(request);
 
             return Ok(
                 LeaveRequestResponseDto.FromEntity(request));

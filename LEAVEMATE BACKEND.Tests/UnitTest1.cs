@@ -7,19 +7,23 @@ namespace LEAVEMATE_BACKEND.Tests;
 public class UnitTest1
 {
     [Fact]
-    public async Task NotifySubmissionAsync_SendsSubmissionNotification()
+    public async Task NotifySubmissionAsync_UsesEmployeeEmail()
     {
         var fakeService = new FakeNotificationService();
         var handler = new LeaveNotificationHandler(fakeService);
 
         var request = new LeaveRequest
         {
-            Id = 100
+            Id = 100,
+            Employee = new Employee
+            {
+                Id = 1,
+                FullName = "John Doe",
+                Email = "employee@leavemate.com"
+            }
         };
 
-        await handler.NotifySubmissionAsync(
-            request,
-            "employee@leavemate.com");
+        await handler.NotifySubmissionAsync(request);
 
         Assert.Equal(
             "employee@leavemate.com",
@@ -35,19 +39,24 @@ public class UnitTest1
     }
 
     [Fact]
-    public async Task NotifyDecisionAsync_Approved_SendsApprovalNotification()
+    public async Task NotifyDecisionAsync_Approved_UsesEmployeeEmail()
     {
         var fakeService = new FakeNotificationService();
         var handler = new LeaveNotificationHandler(fakeService);
 
         var request = new LeaveRequest
         {
-            Id = 101
+            Id = 101,
+            Employee = new Employee
+            {
+                Id = 1,
+                FullName = "John Doe",
+                Email = "employee@leavemate.com"
+            }
         };
 
         await handler.NotifyDecisionAsync(
             request,
-            "employee@leavemate.com",
             true,
             "Approved by supervisor");
 
@@ -69,19 +78,24 @@ public class UnitTest1
     }
 
     [Fact]
-    public async Task NotifyDecisionAsync_Rejected_SendsRejectionNotification()
+    public async Task NotifyDecisionAsync_Rejected_UsesEmployeeEmail()
     {
         var fakeService = new FakeNotificationService();
         var handler = new LeaveNotificationHandler(fakeService);
 
         var request = new LeaveRequest
         {
-            Id = 102
+            Id = 102,
+            Employee = new Employee
+            {
+                Id = 1,
+                FullName = "John Doe",
+                Email = "employee@leavemate.com"
+            }
         };
 
         await handler.NotifyDecisionAsync(
             request,
-            "employee@leavemate.com",
             false,
             "Insufficient leave balance");
 
@@ -102,8 +116,67 @@ public class UnitTest1
             fakeService.Message);
     }
 
+    [Fact]
+    public async Task NotifyRecallAsync_UsesEmployeeEmail()
+    {
+        var fakeService = new FakeNotificationService();
+        var handler = new LeaveNotificationHandler(fakeService);
+
+        var request = new LeaveRequest
+        {
+            Id = 103,
+            Employee = new Employee
+            {
+                Id = 1,
+                FullName = "John Doe",
+                Email = "employee@leavemate.com"
+            }
+        };
+
+        await handler.NotifyRecallAsync(request);
+
+        Assert.Equal(
+            "employee@leavemate.com",
+            fakeService.Recipient);
+
+        Assert.Equal(
+            "Leave Request Recalled",
+            fakeService.Subject);
+
+        Assert.Contains(
+            "Leave request #103 has been recalled successfully.",
+            fakeService.Message);
+    }
+
+    [Fact]
+    public async Task NotifySubmissionAsync_WithNoEmployeeEmail_DoesNotSendNotification()
+    {
+        var fakeService = new FakeNotificationService();
+        var handler = new LeaveNotificationHandler(fakeService);
+
+        var request = new LeaveRequest
+        {
+            Id = 104,
+            Employee = new Employee
+            {
+                Id = 1,
+                FullName = "John Doe",
+                Email = string.Empty
+            }
+        };
+
+        await handler.NotifySubmissionAsync(request);
+
+        Assert.False(fakeService.WasSent);
+        Assert.Null(fakeService.Recipient);
+        Assert.Null(fakeService.Subject);
+        Assert.Null(fakeService.Message);
+    }
+
     private class FakeNotificationService : INotificationService
     {
+        public bool WasSent { get; private set; }
+
         public string? Recipient { get; private set; }
         public string? Subject { get; private set; }
         public string? Message { get; private set; }
@@ -113,6 +186,7 @@ public class UnitTest1
             string subject,
             string message)
         {
+            WasSent = true;
             Recipient = recipient;
             Subject = subject;
             Message = message;
