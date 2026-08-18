@@ -14,9 +14,15 @@ namespace LeaveMate.Services.Notifications
         }
 
         public async Task NotifySubmissionAsync(
-            LeaveRequest request,
-            string recipient)
+            LeaveRequest request)
         {
+            var recipient = request.Employee?.Email;
+
+            if (string.IsNullOrWhiteSpace(recipient))
+            {
+                return;
+            }
+
             await _notificationService.SendAsync(
                 recipient,
                 "Leave Request Submitted",
@@ -25,10 +31,16 @@ namespace LeaveMate.Services.Notifications
 
         public async Task NotifyDecisionAsync(
             LeaveRequest request,
-            string recipient,
             bool approved,
             string? comment = null)
         {
+            var recipient = request.Employee?.Email;
+
+            if (string.IsNullOrWhiteSpace(recipient))
+            {
+                return;
+            }
+
             var status = approved ? "Approved" : "Rejected";
 
             var message =
@@ -46,9 +58,15 @@ namespace LeaveMate.Services.Notifications
         }
 
         public async Task NotifyRecallAsync(
-            LeaveRequest request,
-            string recipient)
+            LeaveRequest request)
         {
+            var recipient = request.Employee?.Email;
+
+            if (string.IsNullOrWhiteSpace(recipient))
+            {
+                return;
+            }
+
             await _notificationService.SendAsync(
                 recipient,
                 "Leave Request Recalled",

@@ -31,7 +31,7 @@ namespace LeaveMate.Services
 
             _db.Set<AuditLog>().Add(auditLog);
 
-            await _db.SaveChangesAsync();
+            await Task.CompletedTask;
         }
     }
 }
