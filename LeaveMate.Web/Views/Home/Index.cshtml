@@ -1,0 +1,93 @@
+@model IEnumerable<LeaveMate.Web.Models.LeaveRequestRow>
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActiveNav"] = "dashboard";
+}
+
+<div class="page">
+
+    <div class="page-head">
+        <h1 class="display">Good morning, Jane</h1>
+        <p class="subtle">Here is your leave overview for 2026.</p>
+    </div>
+
+    @* Reusable alert component *@
+    <partial name="_Alert" model="@(new AlertViewModel {
+        Kind = AlertKind.Info,
+        Title = "Heads up:",
+        Message = "Your Annual Leave request for Aug 12–16 is awaiting supervisor approval." })" />
+
+    @* Leave-balance summary cards — responsive auto-fit grid *@
+    <section class="stat-grid">
+        <div class="card card--accent stat">
+            <span class="label-caps">Annual Leave</span>
+            <span class="stat__value">14<span>days left</span></span>
+        </div>
+        <div class="card card--accent stat">
+            <span class="label-caps">Sick Leave</span>
+            <span class="stat__value">5<span>days left</span></span>
+        </div>
+        <div class="card card--accent stat">
+            <span class="label-caps">Personal Days</span>
+            <span class="stat__value">2<span>days left</span></span>
+        </div>
+    </section>
+
+    @* "My Requests" table using the reusable status badge *@
+    <section class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <h2 class="headline">My Requests</h2>
+            <a class="btn btn--primary" href="#" data-modal-open="requestModal">＋ New Request</a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model)
+                    {
+                        <tr>
+                            <td>@row.Type</td>
+                            <td class="subtle">@row.Dates</td>
+                            <td class="data-num">@row.Days</td>
+                            <td><partial name="_StatusBadge" model="row.Status" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    @* Component gallery — shows all three badge states + alert variants *@
+    <section class="card">
+        <h2 class="headline" style="margin-bottom:16px;">Component states</h2>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+            <partial name="_StatusBadge" model="LeaveStatus.Pending" />
+            <partial name="_StatusBadge" model="LeaveStatus.Approved" />
+            <partial name="_StatusBadge" model="LeaveStatus.Rejected" />
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <partial name="_Alert" model="@(new AlertViewModel { Kind = AlertKind.Success, Title = "Approved.", Message = "Your sick leave was approved by HR." })" />
+            <partial name="_Alert" model="@(new AlertViewModel { Kind = AlertKind.Warning, Title = "Coverage risk:", Message = "Two teammates are already on leave during this period." })" />
+            <partial name="_Alert" model="@(new AlertViewModel { Kind = AlertKind.Danger, Title = "Rejected.", Message = "This request exceeds your available balance." })" />
+        </div>
+    </section>
+</div>
+
+@* Reusable modal popup — triggered by any [data-modal-open="requestModal"] element *@
+<partial name="_Modal" model="@(new ModalViewModel {
+    Id = "requestModal",
+    Title = "New Leave Request",
+    Body = "Select a leave type and date range, then submit for supervisor approval.",
+    ConfirmText = "Submit Request",
+    CancelText = "Cancel",
+    ConfirmKind = AlertKind.Info })" />
