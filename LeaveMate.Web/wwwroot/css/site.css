@@ -392,6 +392,7 @@ body.has-modal { overflow: hidden; }
     background: rgba(25, 28, 30, 0.45);
     animation: modal-fade .15s ease;
 }
+.modal[hidden] { display: none; }
 .modal__dialog {
     width: 100%;
     max-width: 460px;
@@ -462,4 +463,98 @@ body.has-modal { overflow: hidden; }
     .nav-link { justify-content: flex-start; }
 
     .topbar__toggle { display: flex; }
+}
+
+/* ==========================================================================
+   Feature surfaces — history, team calendar, and supervisor approvals
+   ========================================================================== */
+.feature-toolbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field input, .field select, .field textarea {
+    width: 100%;
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-sm);
+    background: var(--surface-card);
+    color: var(--on-surface);
+    font: inherit;
+    padding: 9px 10px;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+    outline: 0;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-tint);
+}
+.sort-button {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    padding: 0;
+    text-transform: inherit;
+}
+.sort-button:hover { color: var(--primary-dark); }
+.empty-state { padding: 24px 16px; color: var(--on-surface-variant); text-align: center; }
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.calendar-navigation { display: flex; align-items: center; gap: 6px; }
+.calendar-navigation .btn { min-width: 40px; justify-content: center; }
+.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.calendar-weekdays { color: var(--on-surface-variant); font-size: 12px; font-weight: 600; text-align: center; text-transform: uppercase; }
+.calendar-grid { border-top: 1px solid var(--outline-variant); border-left: 1px solid var(--outline-variant); margin-top: 8px; }
+.calendar-day {
+    min-height: 118px;
+    padding: 8px;
+    border-right: 1px solid var(--outline-variant);
+    border-bottom: 1px solid var(--outline-variant);
+    background: var(--surface-card);
+}
+.calendar-day.is-outside { background: var(--surface); color: var(--outline); }
+.calendar-day__number { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
+.calendar-event {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    border: 0;
+    border-left: 3px solid currentColor;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--status-info-fg);
+    font-size: 11px;
+    margin-bottom: 4px;
+    padding: 4px 5px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.calendar-event:hover { background: var(--surface-hover); }
+.calendar-event.badge--approved { color: var(--status-approved-fg); background: var(--status-approved-bg); }
+.calendar-event.badge--pending { color: var(--status-pending-fg); background: var(--status-pending-bg); }
+.calendar-event.badge--rejected { color: var(--status-rejected-fg); background: var(--status-rejected-bg); }
+.detail-list { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px 16px; margin: 0; }
+.detail-list dt { color: var(--on-surface-variant); font-size: 12px; font-weight: 600; }
+.detail-list dd { margin: 0; font-weight: 500; }
+.approval-actions { display: flex; justify-content: flex-end; gap: 6px; }
+.approval-actions .btn { padding: 7px 10px; font-size: 12px; }
+.approval-reason { min-width: 180px; }
+
+@media (max-width: 768px) {
+    .feature-toolbar { grid-template-columns: 1fr; }
+    .calendar-toolbar { align-items: flex-start; flex-direction: column-reverse; }
+    .calendar-day { min-height: 92px; padding: 6px; }
+    .calendar-event { font-size: 10px; }
+    .calendar-weekdays { font-size: 10px; }
+    .approval-actions { flex-direction: column; }
 }
