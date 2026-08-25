@@ -16,7 +16,47 @@
     function showDetails(event) {
         const modal = document.getElementById('calendarEventModal');
         const body = modal.querySelector('.modal__body');
-        body.innerHTML = '<dl class="detail-list"><dt>Employee</dt><dd>' + event.employeeName + '</dd><dt>Leave type</dt><dd>' + event.leaveType + '</dd><dt>Start date</dt><dd>' + dateFormatter.format(parseDate(event.startDate)) + '</dd><dt>End date</dt><dd>' + dateFormatter.format(parseDate(event.endDate)) + '</dd><dt>Duration</dt><dd>' + event.durationInDays + ' day' + (event.durationInDays === 1 ? '' : 's') + '</dd><dt>Status</dt><dd><span class="badge ' + statusClass(event.status) + '"><span class="badge__dot"></span>' + event.status + '</span></dd></dl>';
+
+        const list = document.createElement('dl');
+        list.className = 'detail-list';
+
+        const detailRows = [
+            ['Employee', event.employeeName],
+            ['Leave type', event.leaveType],
+            ['Start date', dateFormatter.format(parseDate(event.startDate))],
+            ['End date', dateFormatter.format(parseDate(event.endDate))],
+            ['Duration', event.durationInDays + ' day' + (event.durationInDays === 1 ? '' : 's')]
+        ];
+
+        detailRows.forEach(function (entry) {
+            const key = document.createElement('dt');
+            key.textContent = entry[0];
+            const value = document.createElement('dd');
+            value.textContent = entry[1];
+            list.appendChild(key);
+            list.appendChild(value);
+        });
+
+        const statusKey = document.createElement('dt');
+        statusKey.textContent = 'Status';
+        const statusValue = document.createElement('dd');
+        const statusBadge = document.createElement('span');
+        statusBadge.className = 'badge ' + statusClass(event.status);
+
+        const statusDot = document.createElement('span');
+        statusDot.className = 'badge__dot';
+
+        const statusText = document.createElement('span');
+        statusText.textContent = event.status;
+
+        statusBadge.appendChild(statusDot);
+        statusBadge.appendChild(statusText);
+        statusValue.appendChild(statusBadge);
+        list.appendChild(statusKey);
+        list.appendChild(statusValue);
+
+        body.textContent = '';
+        body.appendChild(list);
         modal.hidden = false;
         document.body.classList.add('has-modal');
         modal.querySelector('[data-modal-close]').focus();

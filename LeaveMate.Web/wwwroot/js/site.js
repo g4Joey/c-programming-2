@@ -35,6 +35,7 @@
         modal.querySelector('.btn, [data-modal-close]')?.focus();
     }
     function closeModal(modal) {
+        if (!modal) return;
         modal.hidden = true;
         if (!document.querySelector('.modal:not([hidden])')) {
             document.body.classList.remove('has-modal');

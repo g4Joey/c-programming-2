@@ -14,6 +14,7 @@
         document.body.classList.remove('has-modal');
     }
     function openModal(row, action) {
+        if (!row) return;
         selectedRow = row;
         selectedAction = action;
         const employee = row.querySelector('td').textContent.trim();
@@ -29,7 +30,41 @@
     function showAlert(action, employee, note) {
         const verb = action === 'approve' ? 'approved' : 'rejected';
         const noteText = note ? ' Comment recorded locally: ' + note : '';
-        alertArea.innerHTML = '<div class="alert ' + (action === 'approve' ? 'alert--success' : 'alert--danger') + '" role="alert"><span class="alert__icon">' + (action === 'approve' ? '✓' : '✕') + '</span><div class="alert__body"><strong class="alert__title">Mock action complete</strong><span class="alert__message">' + employee + '\'s request was ' + verb + ' locally.' + noteText + '</span></div><button class="alert__close" type="button" data-alert-dismiss aria-label="Dismiss">✕</button></div>';
+
+        const alert = document.createElement('div');
+        alert.className = 'alert ' + (action === 'approve' ? 'alert--success' : 'alert--danger');
+        alert.setAttribute('role', 'alert');
+
+        const icon = document.createElement('span');
+        icon.className = 'alert__icon';
+        icon.textContent = action === 'approve' ? '✓' : '✕';
+
+        const body = document.createElement('div');
+        body.className = 'alert__body';
+
+        const title = document.createElement('strong');
+        title.className = 'alert__title';
+        title.textContent = 'Mock action complete';
+
+        const messageText = document.createElement('span');
+        messageText.className = 'alert__message';
+        messageText.textContent = employee + '\'s request was ' + verb + ' locally.' + noteText;
+
+        const closeButton = document.createElement('button');
+        closeButton.className = 'alert__close';
+        closeButton.type = 'button';
+        closeButton.setAttribute('data-alert-dismiss', '');
+        closeButton.setAttribute('aria-label', 'Dismiss');
+        closeButton.textContent = '✕';
+
+        body.appendChild(title);
+        body.appendChild(messageText);
+        alert.appendChild(icon);
+        alert.appendChild(body);
+        alert.appendChild(closeButton);
+
+        alertArea.textContent = '';
+        alertArea.appendChild(alert);
     }
 
     document.querySelectorAll('[data-approval-action]').forEach(function (button) {
