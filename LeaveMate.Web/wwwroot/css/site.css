@@ -382,6 +382,7 @@ table.data tbody td:last-child { text-align: right; }
    Modal
    ========================================================================== */
 body.has-modal { overflow: hidden; }
+.modal[hidden] { display: none; }
 .modal {
     position: fixed;
     inset: 0;

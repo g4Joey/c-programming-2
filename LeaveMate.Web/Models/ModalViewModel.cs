@@ -11,7 +11,7 @@ public class ModalViewModel
 
     public string Title { get; set; } = string.Empty;
 
-    /// <summary>Body copy. For richer content, render the partial with a custom body block instead.</summary>
+/// <summary>Body copy. For richer content, create a dedicated partial (or a ViewComponent) for the modal body.</summary>
     public string? Body { get; set; }
 
     public string ConfirmText { get; set; } = "Confirm";
