@@ -1,0 +1,50 @@
+@model IEnumerable<LeaveMate.Web.Models.ApprovalQueueItemViewModel>
+@{
+    ViewData["Title"] = "Supervisor Approvals";
+    ViewData["ActiveNav"] = "approvals";
+}
+
+<div class="page">
+    <div class="page-head">
+        <h1 class="display">Supervisor Approvals</h1>
+        <p class="subtle">Review leave requests awaiting supervisor approval.</p>
+    </div>
+
+    <div id="approvalAlert" aria-live="polite"></div>
+    <section class="card">
+        <div class="table-wrap">
+            <table class="data approval-table" id="approvalTable">
+                <thead>
+                    <tr><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Days</th><th>Reason</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model)
+                    {
+                        <tr data-approval-id="@request.Id">
+                            <td><strong>@request.EmployeeName</strong></td>
+                            <td>@request.LeaveType</td>
+                            <td class="subtle">@request.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td class="subtle">@request.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td class="data-num">@request.Days</td>
+                            <td class="approval-reason">@request.Reason</td>
+                            <td><div class="approval-actions"><button class="btn btn--success" type="button" data-approval-action="approve">Approve</button><button class="btn btn--danger" type="button" data-approval-action="reject">Reject</button></div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="empty-state" id="approvalEmpty" hidden>No pending approvals.</p>
+        </div>
+    </section>
+</div>
+
+<div class="modal" id="approvalModal" role="dialog" aria-modal="true" aria-labelledby="approvalModalTitle" hidden>
+    <div class="modal__dialog">
+        <header class="modal__header"><h2 class="modal__title" id="approvalModalTitle">Review request</h2><button class="modal__close" type="button" data-approval-close aria-label="Close">✕</button></header>
+        <div class="modal__body"><p id="approvalModalMessage"></p><label class="field"><span class="label-caps">Comment (optional)</span><textarea id="approvalComment" rows="3" placeholder="Add a note for the employee"></textarea></label></div>
+        <footer class="modal__footer"><button class="btn btn--ghost" type="button" data-approval-close>Cancel</button><button class="btn" id="approvalConfirm" type="button"></button></footer>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/approvals.js" asp-append-version="true"></script>
+}
