@@ -1,0 +1,108 @@
+@{
+    var active = ViewData["ActiveNav"] as string ?? "dashboard";
+
+    (string Key, string Label, string Icon, string Href)[] navItems =
+    {
+        ("dashboard", "Dashboard", "grid", "/"),
+        ("requests", "Leave Requests", "inbox", "#"),
+        ("calendar", "Team Calendar", "calendar", "#"),
+        ("accruals", "Accruals", "layers", "#"),
+        ("reports", "Reports", "bar-chart", "#"),
+        ("settings", "Settings", "settings", "#"),
+    };
+
+    string NavClass(string key) => key == active ? "nav-link is-active" : "nav-link";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "LeaveMate") · TimeOff Central</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-shell">
+
+        <!-- ===== Lateral navigation bar ===== -->
+        <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+            <div class="sidebar__brand">
+                <span class="brand__mark" aria-hidden="true">◆</span>
+                <span class="brand__text">
+                    <strong>TimeOff Central</strong>
+                    <small>Enterprise HR Portal</small>
+                </span>
+            </div>
+
+            <a class="btn btn--primary sidebar__cta" href="#" data-modal-open="requestModal">
+                <span aria-hidden="true">＋</span> New Request
+            </a>
+
+            <nav class="sidebar__nav">
+                @foreach (var item in navItems)
+                {
+                    <a class="@NavClass(item.Key)" href="@item.Href">
+                        <span class="nav-link__icon" data-icon="@item.Icon" aria-hidden="true"></span>
+                        <span class="nav-link__label">@item.Label</span>
+                    </a>
+                }
+            </nav>
+
+            <div class="sidebar__footer">
+                <a class="nav-link" href="#">
+                    <span class="nav-link__icon" data-icon="help" aria-hidden="true"></span>
+                    <span class="nav-link__label">Help</span>
+                </a>
+                <a class="nav-link" href="#">
+                    <span class="nav-link__icon" data-icon="logout" aria-hidden="true"></span>
+                    <span class="nav-link__label">Sign Out</span>
+                </a>
+                <div class="user-chip">
+                    <span class="avatar" aria-hidden="true">JD</span>
+                    <span class="user-chip__meta">
+                        <strong>Jane Doe</strong>
+                        <small>HR Admin</small>
+                    </span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== Top header ===== -->
+        <header class="topbar">
+            <button class="topbar__toggle" id="sidebarToggle" aria-label="Toggle navigation" aria-controls="sidebar">
+                <span></span><span></span><span></span>
+            </button>
+
+            <div class="topbar__search">
+                <span class="topbar__search-icon" aria-hidden="true">⌕</span>
+                <input type="search" placeholder="Search requests, people…" aria-label="Search" />
+            </div>
+
+            <div class="topbar__actions">
+                <button class="icon-btn" aria-label="Notifications">
+                    <span aria-hidden="true">🔔</span>
+                    <span class="icon-btn__dot" aria-hidden="true"></span>
+                </button>
+                <button class="icon-btn" aria-label="History">↺</button>
+                <span class="avatar avatar--sm" aria-hidden="true">JD</span>
+            </div>
+        </header>
+
+        <!-- ===== Main content outlet ===== -->
+        <main class="main" id="main" role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Backdrop for the mobile off-canvas sidebar -->
+    <div class="scrim" id="scrim" hidden></div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

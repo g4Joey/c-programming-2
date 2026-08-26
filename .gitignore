@@ -1,0 +1,19 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# .NET / Rider / VS
+.vs/
+.idea/
+*.suo
+*.userprefs
+
+# Node (if any tooling is added later)
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

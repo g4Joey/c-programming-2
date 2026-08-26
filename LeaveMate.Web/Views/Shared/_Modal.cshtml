@@ -1,0 +1,40 @@
+@model LeaveMate.Web.Models.ModalViewModel
+@*
+    Reusable modal popup.
+    Open from any element with  data-modal-open="@Model.Id".
+    Closes on the ✕ button, the Cancel button, the scrim, or the Escape key.
+    Usage:
+        <partial name="_Modal" model='new ModalViewModel {
+            Id = "requestModal", Title = "New Leave Request",
+            Body = "Choose a leave type and date range.",
+            ConfirmText = "Submit", ConfirmKind = AlertKind.Info }' />
+*@
+@{
+    var confirmClass = Model.ConfirmKind switch
+    {
+        AlertKind.Danger => "btn--danger",
+        AlertKind.Success => "btn--success",
+        _ => "btn--primary",
+    };
+}
+<div class="modal" id="@Model.Id" role="dialog" aria-modal="true"
+     aria-labelledby="@(Model.Id)-title" hidden>
+    <div class="modal__dialog" role="document">
+        <header class="modal__header">
+            <h2 class="modal__title" id="@(Model.Id)-title">@Model.Title</h2>
+            <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
+        </header>
+
+        <div class="modal__body">
+            @if (!string.IsNullOrEmpty(Model.Body))
+            {
+                <p>@Model.Body</p>
+            }
+        </div>
+
+        <footer class="modal__footer">
+            <button class="btn btn--ghost" type="button" data-modal-close>@Model.CancelText</button>
+            <button class="btn @confirmClass" type="button">@Model.ConfirmText</button>
+        </footer>
+    </div>
+</div>
