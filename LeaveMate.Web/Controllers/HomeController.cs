@@ -18,5 +18,5 @@ public class HomeController : Controller
         return View(requests);
     }
 
-    public IActionResult Error() => View();
+    public IActionResult Error() => Problem();
 }
