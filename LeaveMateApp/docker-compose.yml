@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  leavemate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - AppBaseUrl=http://localhost:8080
+    volumes:
+      - leavemate-data:/app/data
+
+volumes:
+  leavemate-data:

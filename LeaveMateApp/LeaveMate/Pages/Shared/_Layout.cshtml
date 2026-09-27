@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - LeaveMate</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <div class="app-shell">
+        <nav class="nav-rail" aria-label="Primary navigation">
+            <div class="nav-rail__brand">LeaveMate</div>
+            <a class="nav-rail__link" href="/">Dashboard</a>
+            <a class="nav-rail__link" href="/Requests/Create">Request Leave</a>
+            <a class="nav-rail__link" href="/Requests/MyRequests">My Requests</a>
+            <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+            <a class="nav-rail__link" href="/Approvals/Supervisor">Supervisor Queue</a>
+            <a class="nav-rail__link" href="/Approvals/Hr">HR Queue</a>
+        </nav>
+
+        <main class="app-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
