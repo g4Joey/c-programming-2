@@ -1,0 +1,61 @@
+@page
+@model LeaveMate.Pages.Requests.MyRequestsModel
+@{
+    ViewData["Title"] = "My Requests";
+}
+
+<h1>My Requests</h1>
+
+<form method="get" class="card">
+    <div class="form-field">
+        <label for="employeeId">Employee</label>
+        <select id="employeeId" name="employeeId" onchange="this.form.submit()">
+            @foreach (var e in Model.EmployeeOptions)
+            {
+                if (e.Value == Model.EmployeeId.ToString())
+                {
+                    <option value="@e.Value" selected>@e.Text</option>
+                }
+                else
+                {
+                    <option value="@e.Value">@e.Text</option>
+                }
+            }
+        </select>
+    </div>
+</form>
+
+<div class="card">
+    @if (!Model.Requests.Any())
+    {
+        <p>No requests found for this employee.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr><th>Type</th><th>Dates</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Requests)
+                {
+                    <tr>
+                        <td>@r.Type</td>
+                        <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString()</td>
+                        <td><span class="badge badge--pending">@r.Status</span></td>
+                        <td>
+                            @if (r.Status is Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval)
+                            {
+                                <form method="post" asp-page-handler="Recall">
+                                    <input type="hidden" name="requestId" value="@r.Id" />
+                                    <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
+                                    <button type="submit" class="btn btn--secondary">Recall</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
