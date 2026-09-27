@@ -40,10 +40,10 @@ namespace LeaveMate.Data
             db.Employees.AddRange(hrAdmin, supervisor);
             db.SaveChanges(); // Persist so identity Ids exist for the FK below.
 
-            var farrash = new Employee
+            var kendall = new Employee
             {
-                FullName = "Farrash Osuman",
-                Email = "farrash.osuman@leavemate.local",
+                FullName = "Kendall Brooks",
+                Email = "kendall.brooks@leavemate.local",
                 SupervisorId = supervisor.Id,
                 AnnualLeaveBalanceDays = 18
             };
@@ -56,12 +56,12 @@ namespace LeaveMate.Data
                 AnnualLeaveBalanceDays = 21
             };
 
-            db.Employees.AddRange(farrash, james);
+            db.Employees.AddRange(kendall, james);
             db.SaveChanges();
 
             db.LeaveRequests.Add(new LeaveRequest
             {
-                EmployeeId = farrash.Id,
+                EmployeeId = kendall.Id,
                 Type = LeaveType.Annual,
                 StartDate = DateTime.UtcNow.Date.AddDays(14),
                 EndDate = DateTime.UtcNow.Date.AddDays(18),
