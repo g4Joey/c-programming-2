@@ -20,11 +20,6 @@
 
 <form method="post" class="card">
     <div class="form-field">
-        <label asp-for="Input.EmployeeId">Employee</label>
-        <select asp-for="Input.EmployeeId" asp-items="Model.EmployeeOptions"></select>
-    </div>
-
-    <div class="form-field">
         <label asp-for="Input.Type">Leave Type</label>
         <select asp-for="Input.Type">
             @foreach (var type in Enum.GetValues<LeaveType>())

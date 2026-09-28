@@ -6,29 +6,10 @@
 
 <h1>My Requests</h1>
 
-<form method="get" class="card">
-    <div class="form-field">
-        <label for="employeeId">Employee</label>
-        <select id="employeeId" name="employeeId" onchange="this.form.submit()">
-            @foreach (var e in Model.EmployeeOptions)
-            {
-                if (e.Value == Model.EmployeeId.ToString())
-                {
-                    <option value="@e.Value" selected>@e.Text</option>
-                }
-                else
-                {
-                    <option value="@e.Value">@e.Text</option>
-                }
-            }
-        </select>
-    </div>
-</form>
-
 <div class="card">
     @if (!Model.Requests.Any())
     {
-        <p>No requests found for this employee.</p>
+        <p>You have no leave requests yet.</p>
     }
     else
     {

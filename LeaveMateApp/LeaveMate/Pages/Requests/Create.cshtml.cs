@@ -1,8 +1,8 @@
 using LeaveMate.DTOs;
 using LeaveMate.Enums;
+using LeaveMate.Services;
 using LeaveMate.Services.Integration;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace LeaveMate.Pages.Requests
@@ -23,17 +23,32 @@ namespace LeaveMate.Pages.Requests
             EndDate = DateTime.Today.AddDays(1)
         };
 
-        public List<SelectListItem> EmployeeOptions { get; private set; } = new();
         public List<string> Errors { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            await LoadEmployeesAsync();
+            if (!HttpContext.Session.IsActiveRole("Employee"))
+            {
+                Response.Redirect("/Account/Login");
+                return;
+            }
+
+            var currentEmployeeId = HttpContext.Session.GetActiveEmployeeId();
+            if (currentEmployeeId.HasValue)
+            {
+                Input.EmployeeId = currentEmployeeId.Value;
+            }
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            await LoadEmployeesAsync();
+            var currentEmployeeId = HttpContext.Session.GetActiveEmployeeId();
+            if (currentEmployeeId is null || !HttpContext.Session.IsActiveRole("Employee"))
+            {
+                return RedirectToPage("/Account/Login");
+            }
+
+            Input.EmployeeId = currentEmployeeId.Value;
 
             if (!ModelState.IsValid)
             {
@@ -49,14 +64,6 @@ namespace LeaveMate.Pages.Requests
             }
 
             return RedirectToPage("/Requests/MyRequests", new { employeeId = Input.EmployeeId });
-        }
-
-        private async Task LoadEmployeesAsync()
-        {
-            var employees = await _api.GetEmployeesAsync();
-            EmployeeOptions = employees
-                .Select(e => new SelectListItem(e.FullName, e.Id.ToString()))
-                .ToList();
         }
     }
 }

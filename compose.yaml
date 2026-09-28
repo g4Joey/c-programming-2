@@ -6,5 +6,4 @@ services:
     build:
       context: .
       dockerfile: LeaveMateApp/LeaveMate.Tests/Dockerfile
-    ports:
-      - 8080:8080
+    command: ["dotnet", "test", "LeaveMateApp/LeaveMate.Tests/LeaveMate.Tests.csproj", "--logger", "console;verbosity=minimal"]

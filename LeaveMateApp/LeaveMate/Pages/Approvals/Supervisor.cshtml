@@ -6,25 +6,6 @@
 
 <h1>Supervisor Approval Queue</h1>
 
-<form method="get" class="card">
-    <div class="form-field">
-        <label for="supervisorId">Supervisor</label>
-        <select id="supervisorId" name="supervisorId" onchange="this.form.submit()">
-            @foreach (var s in Model.SupervisorOptions)
-            {
-                if (s.Value == Model.SupervisorId.ToString())
-                {
-                    <option value="@s.Value" selected>@s.Text</option>
-                }
-                else
-                {
-                    <option value="@s.Value">@s.Text</option>
-                }
-            }
-        </select>
-    </div>
-</form>
-
 <div class="card">
     @if (!Model.PendingRequests.Any())
     {

@@ -7,6 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -37,7 +45,11 @@ builder.Services.AddHostedService<CoverageRefreshService>();
 builder.Services.AddHttpClient<LeaveMateApiClient>(client =>
 {
     // Self-referencing base address: Razor Pages call this app's own API.
-    client.BaseAddress = new Uri(builder.Configuration["AppBaseUrl"] ?? "http://localhost:5000");
+    var appBaseUrl = builder.Configuration["AppBaseUrl"]
+        ?? builder.Configuration["urls"]
+        ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+        ?? "http://localhost:5000";
+    client.BaseAddress = new Uri(appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]);
 });
 
 var app = builder.Build();
@@ -60,7 +72,14 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 app.UseAuthorization();
+
+app.MapPost("/Account/SignOut", (HttpContext context) =>
+{
+    context.Session.Clear();
+    return Results.Redirect("/Account/Login");
+});
 
 app.MapControllers();
 app.MapRazorPages();

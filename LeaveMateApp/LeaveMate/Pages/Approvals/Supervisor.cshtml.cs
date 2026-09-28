@@ -1,4 +1,5 @@
 using LeaveMate.DTOs;
+using LeaveMate.Services;
 using LeaveMate.Services.Integration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -18,20 +19,19 @@ namespace LeaveMate.Pages.Approvals
         [BindProperty(SupportsGet = true)]
         public int SupervisorId { get; set; }
 
-        public List<SelectListItem> SupervisorOptions { get; private set; } = new();
         public List<LeaveRequestResponseDto> PendingRequests { get; private set; } = new();
 
         public async Task OnGetAsync()
         {
-            var employees = await _api.GetEmployeesAsync();
-            var supervisors = employees.Where(e => employees.Any(x => x.SupervisorId == e.Id)).ToList();
-            SupervisorOptions = supervisors.Select(e => new SelectListItem(e.FullName, e.Id.ToString())).ToList();
-
-            if (SupervisorId == 0 && supervisors.Any())
+            var activeManagerId = HttpContext.Session.GetActiveEmployeeId();
+            if (activeManagerId is null || !HttpContext.Session.IsActiveRole("Manager"))
             {
-                SupervisorId = supervisors.First().Id;
+                Response.Redirect("/Account/Login");
+                return;
             }
 
+            SupervisorId = activeManagerId.Value;
+            var employees = await _api.GetEmployeesAsync();
             var directReportIds = employees.Where(e => e.SupervisorId == SupervisorId).Select(e => e.Id).ToHashSet();
             var pending = await _api.GetLeaveRequestsAsync(status: "PendingSupervisorApproval");
             PendingRequests = pending.Where(r => directReportIds.Contains(r.EmployeeId)).ToList();
@@ -39,14 +39,20 @@ namespace LeaveMate.Pages.Approvals
 
         public async Task<IActionResult> OnPostDecideAsync(int requestId, int supervisorId, bool approve, string? comment)
         {
+            var activeManagerId = HttpContext.Session.GetActiveEmployeeId();
+            if (activeManagerId is null || !HttpContext.Session.IsActiveRole("Manager"))
+            {
+                return RedirectToPage("/Account/Login");
+            }
+
             await _api.SupervisorDecisionAsync(requestId, new LeaveDecisionDto
             {
-                DecidedByEmployeeId = supervisorId,
+                DecidedByEmployeeId = activeManagerId.Value,
                 Approve = approve,
                 Comment = comment
             });
 
-            return RedirectToPage(new { supervisorId });
+            return RedirectToPage(new { supervisorId = activeManagerId.Value });
         }
     }
 }

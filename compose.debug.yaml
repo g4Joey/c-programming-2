@@ -8,9 +8,8 @@ services:
       dockerfile: LeaveMateApp/LeaveMate.Tests/Dockerfile
       args:
         - configuration=Debug
-    ports:
-      - 8080:8080
+    command: ["dotnet", "test", "LeaveMateApp/LeaveMate.Tests/LeaveMate.Tests.csproj", "--logger", "console;verbosity=minimal"]
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     volumes:
-      - ~/.vsdbg:c:\remote_debugger:rw
+      - ~/.vsdbg:/remote_debugger:rw

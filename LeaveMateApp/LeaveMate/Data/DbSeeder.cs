@@ -17,12 +17,7 @@ namespace LeaveMate.Data
         {
             db.Database.EnsureCreated();
 
-            if (db.Employees.Any())
-            {
-                return; // Already seeded.
-            }
-
-            var hrAdmin = new Employee
+            var hrAdmin = db.Employees.FirstOrDefault(e => e.Email == "ama.boateng@leavemate.local") ?? new Employee
             {
                 FullName = "Ama Boateng",
                 Email = "ama.boateng@leavemate.local",
@@ -30,45 +25,69 @@ namespace LeaveMate.Data
                 AnnualLeaveBalanceDays = 21
             };
 
-            var supervisor = new Employee
+            var supervisor = db.Employees.FirstOrDefault(e => e.Email == "kojo.mensah@leavemate.local") ?? new Employee
             {
                 FullName = "Kojo Mensah",
                 Email = "kojo.mensah@leavemate.local",
                 AnnualLeaveBalanceDays = 21
             };
 
-            db.Employees.AddRange(hrAdmin, supervisor);
-            db.SaveChanges(); // Persist so identity Ids exist for the FK below.
+            hrAdmin.IsHrAdministrator = true;
+            hrAdmin.SupervisorId = null;
+            supervisor.IsHrAdministrator = false;
+            supervisor.SupervisorId = null;
 
-            var kendall = new Employee
-            {
-                FullName = "Kendall Brooks",
-                Email = "kendall.brooks@leavemate.local",
-                SupervisorId = supervisor.Id,
-                AnnualLeaveBalanceDays = 18
-            };
+            if (hrAdmin.Id == 0) db.Employees.Add(hrAdmin);
+            if (supervisor.Id == 0) db.Employees.Add(supervisor);
+            db.SaveChanges();
 
-            var james = new Employee
+            var jane = db.Employees.FirstOrDefault(e => e.Email == "jane.mensah@leavemate.local") ?? new Employee
             {
-                FullName = "James Osei Agyemang",
-                Email = "james.agyemang@leavemate.local",
-                SupervisorId = supervisor.Id,
+                FullName = "Jane Mensah",
+                Email = "jane.mensah@leavemate.local",
                 AnnualLeaveBalanceDays = 21
             };
 
-            db.Employees.AddRange(kendall, james);
+            jane.SupervisorId = supervisor.Id;
+            jane.IsHrAdministrator = false;
+            if (jane.Id == 0) db.Employees.Add(jane);
             db.SaveChanges();
 
-            db.LeaveRequests.Add(new LeaveRequest
+            var manager = db.Employees.First(e => e.Email == "kojo.mensah@leavemate.local");
+            var janeEmployee = db.Employees.First(e => e.Email == "jane.mensah@leavemate.local");
+            var kendall = db.Employees.FirstOrDefault(e => e.Email == "kendall.brooks@leavemate.local") ?? new Employee
             {
-                EmployeeId = kendall.Id,
-                Type = LeaveType.Annual,
-                StartDate = DateTime.UtcNow.Date.AddDays(14),
-                EndDate = DateTime.UtcNow.Date.AddDays(18),
-                Reason = "Family event",
-                Status = LeaveStatus.PendingSupervisorApproval,
-                SubmittedAtUtc = DateTime.UtcNow
-            });
+                FullName = "Kendall Brooks",
+                Email = "kendall.brooks@leavemate.local",
+                SupervisorId = manager.Id,
+                AnnualLeaveBalanceDays = 18
+            };
+
+            var james = db.Employees.FirstOrDefault(e => e.Email == "james.agyemang@leavemate.local") ?? new Employee
+            {
+                FullName = "James Osei Agyemang",
+                Email = "james.agyemang@leavemate.local",
+                SupervisorId = manager.Id,
+                AnnualLeaveBalanceDays = 21
+            };
+
+            if (kendall.Id == 0) db.Employees.Add(kendall);
+            if (james.Id == 0) db.Employees.Add(james);
+            db.SaveChanges();
+
+            if (!db.LeaveRequests.Any(r => r.EmployeeId == janeEmployee.Id))
+            {
+                db.LeaveRequests.Add(new LeaveRequest
+                {
+                    EmployeeId = janeEmployee.Id,
+                    Type = LeaveType.Annual,
+                    StartDate = DateTime.UtcNow.Date.AddDays(14),
+                    EndDate = DateTime.UtcNow.Date.AddDays(18),
+                    Reason = "Family event",
+                    Status = LeaveStatus.PendingSupervisorApproval,
+                    SubmittedAtUtc = DateTime.UtcNow
+                });
+            }
 
             db.SaveChanges();
         }

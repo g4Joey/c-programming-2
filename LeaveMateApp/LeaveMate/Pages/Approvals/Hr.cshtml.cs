@@ -1,4 +1,5 @@
 using LeaveMate.DTOs;
+using LeaveMate.Services;
 using LeaveMate.Services.Integration;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -19,16 +20,28 @@ namespace LeaveMate.Pages.Approvals
 
         public async Task OnGetAsync()
         {
-            var employees = await _api.GetEmployeesAsync();
-            HrAdminId = employees.FirstOrDefault(e => e.IsHrAdministrator)?.Id ?? 0;
+            var activeHrId = HttpContext.Session.GetActiveEmployeeId();
+            if (activeHrId is null || !HttpContext.Session.IsActiveRole("HR"))
+            {
+                Response.Redirect("/Account/Login");
+                return;
+            }
+
+            HrAdminId = activeHrId.Value;
             PendingRequests = await _api.GetLeaveRequestsAsync(status: "PendingHrApproval");
         }
 
         public async Task<IActionResult> OnPostDecideAsync(int requestId, int hrAdminId, bool approve, string? comment)
         {
+            var activeHrId = HttpContext.Session.GetActiveEmployeeId();
+            if (activeHrId is null || !HttpContext.Session.IsActiveRole("HR"))
+            {
+                return RedirectToPage("/Account/Login");
+            }
+
             await _api.HrDecisionAsync(requestId, new LeaveDecisionDto
             {
-                DecidedByEmployeeId = hrAdminId,
+                DecidedByEmployeeId = activeHrId.Value,
                 Approve = approve,
                 Comment = comment
             });

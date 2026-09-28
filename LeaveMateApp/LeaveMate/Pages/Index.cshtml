@@ -1,17 +1,24 @@
 @page
 @model IndexModel
+@using LeaveMate.Services
 @{
     ViewData["Title"] = "Dashboard";
 }
 
-<h1>Employee Dashboard</h1>
+<h1>@Model.DashboardHeading</h1>
 <p class="card">
-    Welcome to LeaveMate. Submit a new leave request, track your pending
-    approvals, and check team coverage before you book time off.
+    Welcome back, @Model.CurrentUserName. @Model.DashboardDescription
 </p>
 
 <div class="card">
-    <h2>Recent Requests</h2>
+    <h2>@Model.CurrentUserRole actions</h2>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a class="btn" href="@Model.PrimaryActionUrl">@Model.PrimaryActionText</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>@(Model.CurrentUserRole == "Employee" ? "My requests" : "Requests needing review")</h2>
     @if (!Model.RecentRequests.Any())
     {
         <p>No leave requests yet.</p>
