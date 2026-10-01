@@ -32,7 +32,8 @@
                             <form method="post" asp-page-handler="Decide" style="display:flex; gap:0.4rem;">
                                 <input type="hidden" name="requestId" value="@r.Id" />
                                 <input type="hidden" name="hrAdminId" value="@Model.HrAdminId" />
-                                <input type="text" name="comment" placeholder="Comment (optional)" />
+                                <label for="comment-@r.Id" class="sr-only">Decision comment</label>
+                                <input type="text" id="comment-@r.Id" name="comment" placeholder="Comment (optional)" aria-label="Decision comment" />
                                 <button type="submit" name="approve" value="true" class="btn">Approve</button>
                                 <button type="submit" name="approve" value="false" class="btn btn--secondary">Reject</button>
                             </form>

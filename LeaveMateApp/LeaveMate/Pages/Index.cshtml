@@ -36,10 +36,19 @@
                         <td>@r.EmployeeName</td>
                         <td>@r.Type</td>
                         <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString() (@r.DurationInDays d)</td>
-                        <td><span class="badge badge--pending">@r.Status</span></td>
+                        <td><span class="badge @BadgeClass(r.Status)">@r.Status</span></td>
                     </tr>
                 }
             </tbody>
         </table>
     }
 </div>
+
+@functions {
+    private static string BadgeClass(Enums.LeaveStatus status) => status switch
+    {
+        Enums.LeaveStatus.Approved => "badge--approved",
+        Enums.LeaveStatus.RejectedBySupervisor or Enums.LeaveStatus.RejectedByHr => "badge--rejected",
+        _ => "badge--pending"
+    };
+}

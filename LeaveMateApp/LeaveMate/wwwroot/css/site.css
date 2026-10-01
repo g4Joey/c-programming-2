@@ -168,3 +168,5 @@ button.btn--secondary { background: var(--color-muted); }
     .app-shell--nav-collapsed .nav-rail { height: 0; padding: 0; }
     .app-content { padding: 1rem; }
 }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; }

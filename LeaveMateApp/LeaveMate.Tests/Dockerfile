@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS base
+FROM base AS build
 ARG configuration=Release
 WORKDIR /src
 

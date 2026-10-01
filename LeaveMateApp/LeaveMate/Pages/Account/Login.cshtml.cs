@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeaveMate.Pages.Account
 {
+    /// <summary>
+    /// Demo-only login page: allows selecting any seeded employee without a password.
+    /// In production, replace with ASP.NET Identity or an external identity provider.
+    /// </summary>
     public class LoginModel : PageModel
     {
         private readonly ApplicationDbContext _db;

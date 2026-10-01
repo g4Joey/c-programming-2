@@ -5,6 +5,7 @@ obj/
 *.suo
 
 ## SQLite dev database
+data/
 *.db
 *.db-shm
 *.db-wal

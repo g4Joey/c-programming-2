@@ -55,6 +55,7 @@ builder.Services.AddHttpClient<LeaveMateApiClient>(client =>
 var app = builder.Build();
 
 // --- Seed on startup for a working demo out of the box ---------------------
+Directory.CreateDirectory(Path.Combine(app.Environment.ContentRootPath, "data"));
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
