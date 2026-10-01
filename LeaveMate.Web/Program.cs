@@ -1,8 +1,14 @@
 var builder = WebApplication.CreateBuilder(args);
 
-// Frontend (UI) track: Razor/MVC view layer for the LeaveMate portal.
-// The API backend lives in the "LEAVEMATE BACKEND" project and is consumed separately.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddHttpClient("LeaveMateApi", client =>
+{
+    var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+        ?? "http://localhost:5000";
+
+    client.BaseAddress = new Uri(baseUrl);
+});
 
 var app = builder.Build();
 

@@ -1,14 +1,11 @@
+
 @model LeaveMate.Web.Models.ModalViewModel
+
 @*
-    Reusable modal popup.
-    Open from any element with  data-modal-open="@Model.Id".
-    Closes on the ✕ button, the Cancel button, the scrim, or the Escape key.
-    Usage:
-        <partial name="_Modal" model='new ModalViewModel {
-            Id = "requestModal", Title = "New Leave Request",
-            Body = "Choose a leave type and date range.",
-            ConfirmText = "Submit", ConfirmKind = AlertKind.Info }' />
+    Reusable modal popup for LeaveMate.
+    Supports leave request submission through HomeController.
 *@
+
 @{
     var confirmClass = Model.ConfirmKind switch
     {
@@ -17,24 +14,109 @@
         _ => "btn--primary",
     };
 }
-<div class="modal" id="@Model.Id" role="dialog" aria-modal="true"
-     aria-labelledby="@(Model.Id)-title" hidden>
-    <div class="modal__dialog" role="document">
-        <header class="modal__header">
-            <h2 class="modal__title" id="@(Model.Id)-title">@Model.Title</h2>
-            <button class="modal__close" type="button" data-modal-close aria-label="Close">✕</button>
-        </header>
 
-        <div class="modal__body">
-            @if (!string.IsNullOrEmpty(Model.Body))
-            {
-                <p>@Model.Body</p>
-            }
+<div class="modal" id="@Model.Id"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="@(Model.Id)-title"
+     hidden>
+
+    <form asp-controller="Home"
+          asp-action="SubmitRequest"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        <div class="modal__dialog" role="document">
+
+            <!-- Modal header -->
+            <header class="modal__header">
+                <h2 class="modal__title" id="@(Model.Id)-title">
+                    @Model.Title
+                </h2>
+
+                <button class="modal__close"
+                        type="button"
+                        data-modal-close
+                        aria-label="Close">
+                    ✕
+                </button>
+            </header>
+
+            <!-- Modal body and leave request fields -->
+            <div class="modal__body">
+
+                @if (!string.IsNullOrEmpty(Model.Body))
+                {
+                    <p>@Model.Body</p>
+                }
+
+                <div style="margin:16px 0;">
+                    <label for="Type">Leave type</label>
+
+                    <select id="Type"
+                            name="Type"
+                            required
+                            style="display:block;width:100%;padding:10px;margin-top:6px;">
+                        <option value="">Select leave type</option>
+                        <option value="0">Annual Leave</option>
+                        <option value="1">Sick Leave</option>
+                        <option value="2">Maternity Leave</option>
+                        <option value="3">Paternity Leave</option>
+                        <option value="4">Unpaid Leave</option>
+                        <option value="5">Compassionate Leave</option>
+                    </select>
+                </div>
+
+                <div style="margin:16px 0;">
+                    <label for="StartDate">Start date</label>
+
+                    <input id="StartDate"
+                           name="StartDate"
+                           type="date"
+                           required
+                           style="display:block;width:100%;padding:10px;margin-top:6px;" />
+                </div>
+
+                <div style="margin:16px 0;">
+                    <label for="EndDate">End date</label>
+
+                    <input id="EndDate"
+                           name="EndDate"
+                           type="date"
+                           required
+                           style="display:block;width:100%;padding:10px;margin-top:6px;" />
+                </div>
+
+                <div style="margin:16px 0;">
+                    <label for="Reason">Reason</label>
+
+                    <textarea id="Reason"
+                              name="Reason"
+                              maxlength="500"
+                              rows="3"
+                              placeholder="Enter the reason for your leave"
+                              style="display:block;width:100%;padding:10px;margin-top:6px;"></textarea>
+                </div>
+
+            </div>
+
+            <!-- Modal footer -->
+            <footer class="modal__footer">
+
+                <button class="btn btn--ghost"
+                        type="button"
+                        data-modal-close>
+                    @Model.CancelText
+                </button>
+
+                <button class="btn @confirmClass"
+                        type="submit">
+                    @Model.ConfirmText
+                </button>
+
+            </footer>
+
         </div>
-
-        <footer class="modal__footer">
-            <button class="btn btn--ghost" type="button" data-modal-close>@Model.CancelText</button>
-            <button class="btn @confirmClass" type="button">@Model.ConfirmText</button>
-        </footer>
-    </div>
+    </form>
 </div>

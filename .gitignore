@@ -17,3 +17,5 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+# Local development settings
+LEAVEMATE BACKEND/appsettings.Development.json
