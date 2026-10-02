@@ -1,5 +1,6 @@
 using LeaveMate.Data;
 using LeaveMate.Models;
+using LeaveMate.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +25,8 @@ namespace LeaveMate.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetAll()
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var employees = await _db.Employees
                 .Select(e => new
                 {
@@ -42,6 +45,8 @@ namespace LeaveMate.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Employee>> GetById(int id)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var employee = await _db.Employees.FirstOrDefaultAsync(e => e.Id == id);
             return employee is null ? NotFound() : Ok(employee);
         }
@@ -50,6 +55,8 @@ namespace LeaveMate.Controllers
         [HttpGet("{id:int}/direct-reports")]
         public async Task<ActionResult<IEnumerable<Employee>>> GetDirectReports(int id)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var reports = await _db.Employees.Where(e => e.SupervisorId == id).ToListAsync();
             return Ok(reports);
         }

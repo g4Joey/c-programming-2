@@ -39,6 +39,8 @@ namespace LeaveMate.Controllers
         public async Task<ActionResult<object>> GetAll(
             [FromQuery] int? employeeId, [FromQuery] string? status)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var query = _db.LeaveRequests.Include(r => r.Employee).AsQueryable();
 
             if (employeeId.HasValue)
@@ -59,6 +61,8 @@ namespace LeaveMate.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LeaveRequestResponseDto>> GetById(int id)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var request = await _db.LeaveRequests.Include(r => r.Employee)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -70,6 +74,8 @@ namespace LeaveMate.Controllers
         public async Task<ActionResult<LeaveRequestResponseDto>> Create(
             [FromBody] CreateLeaveRequestDto dto)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var request = new LeaveRequest
             {
                 EmployeeId = dto.EmployeeId,
@@ -100,6 +106,8 @@ namespace LeaveMate.Controllers
         [HttpPost("{id:int}/supervisor-decision")]
         public async Task<IActionResult> SupervisorDecision(int id, [FromBody] LeaveDecisionDto dto)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
             if (request is null) return NotFound();
 
@@ -120,6 +128,8 @@ namespace LeaveMate.Controllers
         [HttpPost("{id:int}/hr-decision")]
         public async Task<IActionResult> HrDecision(int id, [FromBody] LeaveDecisionDto dto)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
             if (request is null) return NotFound();
 
@@ -140,6 +150,8 @@ namespace LeaveMate.Controllers
         [HttpPost("{id:int}/recall")]
         public async Task<IActionResult> Recall(int id, [FromQuery] int employeeId)
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             var request = await _db.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id);
             if (request is null) return NotFound();
 

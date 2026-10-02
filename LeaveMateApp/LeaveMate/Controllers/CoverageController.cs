@@ -1,4 +1,5 @@
 using LeaveMate.Services.Integration;
+using LeaveMate.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LeaveMate.Controllers
@@ -21,6 +22,8 @@ namespace LeaveMate.Controllers
         [HttpGet]
         public IActionResult Get()
         {
+            if (HttpContext.Session.GetActiveEmployeeId() is null) return Unauthorized();
+
             return Ok(new
             {
                 lastRefreshedUtc = _cache.LastRefreshedUtc,
