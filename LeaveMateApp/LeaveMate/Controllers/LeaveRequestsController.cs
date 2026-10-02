@@ -15,7 +15,7 @@ namespace LeaveMate.Controllers
     /// <summary>
     /// Controller logic for the Lead Backend Developer track: wires the
     /// validation engine and workflow service to HTTP endpoints consumed by
-    /// the Razor/Blazor front end.
+    /// the Razor Pages front end.
     /// </summary>
     [ApiController]
     [Route("api/leave-requests")]
@@ -35,7 +35,6 @@ namespace LeaveMate.Controllers
             _workflowService = workflowService;
         }
 
-        // GET api/leave-requests?employeeId=6&status=PendingSupervisorApproval
         [HttpGet]
         public async Task<ActionResult<object>> GetAll(
             [FromQuery] int? employeeId, [FromQuery] string? status)
@@ -57,7 +56,6 @@ namespace LeaveMate.Controllers
             return Ok(results);
         }
 
-        // GET api/leave-requests/5
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LeaveRequestResponseDto>> GetById(int id)
         {
@@ -68,8 +66,6 @@ namespace LeaveMate.Controllers
             return Ok(LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests
-        // Runs the Context-Aware Validation Engine before persisting anything.
         [HttpPost]
         public async Task<ActionResult<LeaveRequestResponseDto>> Create(
             [FromBody] CreateLeaveRequestDto dto)
@@ -101,7 +97,6 @@ namespace LeaveMate.Controllers
                 LeaveRequestResponseDto.FromEntity(saved));
         }
 
-        // POST api/leave-requests/5/supervisor-decision
         [HttpPost("{id:int}/supervisor-decision")]
         public async Task<IActionResult> SupervisorDecision(int id, [FromBody] LeaveDecisionDto dto)
         {
@@ -122,7 +117,6 @@ namespace LeaveMate.Controllers
             return Ok(LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests/5/hr-decision
         [HttpPost("{id:int}/hr-decision")]
         public async Task<IActionResult> HrDecision(int id, [FromBody] LeaveDecisionDto dto)
         {
@@ -143,7 +137,6 @@ namespace LeaveMate.Controllers
             return Ok(LeaveRequestResponseDto.FromEntity(request));
         }
 
-        // POST api/leave-requests/5/recall
         [HttpPost("{id:int}/recall")]
         public async Task<IActionResult> Recall(int id, [FromQuery] int employeeId)
         {

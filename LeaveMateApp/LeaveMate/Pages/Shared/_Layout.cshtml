@@ -1,0 +1,64 @@
+@using LeaveMate.Services
+@{
+    var currentUserName = Context.Session.GetActiveEmployeeName() ?? "Jane Mensah";
+    var currentUserRole = Context.Session.GetActiveEmployeeRole() ?? "Employee";
+    var isSignedIn = Context.Session.GetActiveEmployeeId().HasValue;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - LeaveMate</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body>
+    <div class="app-shell">
+        <nav class="nav-rail" id="primary-nav" aria-label="Primary navigation">
+            <div class="nav-rail__brand">LeaveMate</div>
+            @if (isSignedIn)
+            {
+                <div class="nav-rail__user">
+                    <strong>@currentUserName</strong>
+                    <span>@currentUserRole</span>
+                </div>
+                <a class="nav-rail__link" href="/">Dashboard</a>
+                @if (currentUserRole == "Employee")
+                {
+                    <a class="nav-rail__link" href="/Requests/Create">Request Leave</a>
+                    <a class="nav-rail__link" href="/Requests/MyRequests">My Requests</a>
+                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                }
+                else if (currentUserRole == "Manager")
+                {
+                    <a class="nav-rail__link" href="/Approvals/Supervisor">Team Approvals</a>
+                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                }
+                else if (currentUserRole == "HR")
+                {
+                    <a class="nav-rail__link" href="/Approvals/Hr">HR Review</a>
+                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                }
+                <a class="nav-rail__link" href="/Account/Login">Switch User</a>
+                <form method="post" action="/Account/SignOut">
+                    <button type="submit" class="btn btn--secondary" style="width:100%; margin-top:0.75rem;">Sign Out</button>
+                </form>
+            }
+            else
+            {
+                <a class="nav-rail__link" href="/Account/Login">Sign In</a>
+            }
+        </nav>
+
+        <main class="app-content">
+            <div class="app-content__toolbar">
+                <button type="button" class="btn btn--secondary nav-toggle" aria-controls="primary-nav" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">Collapse sidebar</button>
+            </div>
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

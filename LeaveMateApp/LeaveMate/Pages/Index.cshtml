@@ -1,0 +1,45 @@
+@page
+@model IndexModel
+@using LeaveMate.Services
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>@Model.DashboardHeading</h1>
+<p class="card">
+    Welcome back, @Model.CurrentUserName. @Model.DashboardDescription
+</p>
+
+<div class="card">
+    <h2>@Model.CurrentUserRole actions</h2>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a class="btn" href="@Model.PrimaryActionUrl">@Model.PrimaryActionText</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>@(Model.CurrentUserRole == "Employee" ? "My requests" : "Requests needing review")</h2>
+    @if (!Model.RecentRequests.Any())
+    {
+        <p>No leave requests yet.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr><th>Employee</th><th>Type</th><th>Dates</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.RecentRequests)
+                {
+                    <tr>
+                        <td>@r.EmployeeName</td>
+                        <td>@r.Type</td>
+                        <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString() (@r.DurationInDays d)</td>
+                        <td><span class="badge badge--pending">@r.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

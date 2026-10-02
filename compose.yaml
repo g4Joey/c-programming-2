@@ -1,0 +1,9 @@
+# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP.NET Core service.
+
+services:
+  leavematetests:
+    image: leavematetests
+    build:
+      context: .
+      dockerfile: LeaveMateApp/LeaveMate.Tests/Dockerfile
+    command: ["dotnet", "test", "LeaveMateApp/LeaveMate.Tests/LeaveMate.Tests.csproj", "--logger", "console;verbosity=minimal"]

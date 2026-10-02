@@ -1,0 +1,42 @@
+@page
+@model LeaveMate.Pages.Approvals.SupervisorModel
+@{
+    ViewData["Title"] = "Supervisor Queue";
+}
+
+<h1>Supervisor Approval Queue</h1>
+
+<div class="card">
+    @if (!Model.PendingRequests.Any())
+    {
+        <p>No requests awaiting your approval.</p>
+    }
+    else
+    {
+        <table class="data-table">
+            <thead>
+                <tr><th>Employee</th><th>Type</th><th>Dates</th><th>Reason</th><th>Decision</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.PendingRequests)
+                {
+                    <tr>
+                        <td>@r.EmployeeName</td>
+                        <td>@r.Type</td>
+                        <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString() (@r.DurationInDays d)</td>
+                        <td>@r.Reason</td>
+                        <td>
+                            <form method="post" asp-page-handler="Decide" style="display:flex; gap:0.4rem;">
+                                <input type="hidden" name="requestId" value="@r.Id" />
+                                <input type="hidden" name="supervisorId" value="@Model.SupervisorId" />
+                                <input type="text" name="comment" placeholder="Comment (optional)" />
+                                <button type="submit" name="approve" value="true" class="btn">Approve</button>
+                                <button type="submit" name="approve" value="false" class="btn btn--secondary">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
