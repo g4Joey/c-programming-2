@@ -5,6 +5,12 @@
 }
 
 <div class="page">
+    @if (ViewData["ApiError"] is string apiError)
+{
+    <div class="card" role="alert">
+        @apiError
+    </div>
+}
 
     <div class="page-head">
         <h1 class="display">Good morning, Jane</h1>

@@ -94,13 +94,17 @@ namespace LeaveMate.Services
             }
         }
 
-        private async Task EnsureIsHrAdminAsync(int employeeId)
-        {
-            var isHr = await _db.Employees.AnyAsync(e => e.Id == employeeId && e.IsHrAdministrator);
-            if (!isHr)
-            {
-                throw new WorkflowException("Only an HR Administrator may action this tier.");
-            }
-        }
+       private async Task EnsureIsHrAdminAsync(int employeeId)
+{
+    var isHr = await _db.Employees.AnyAsync(
+        e => e.Id == employeeId && e.IsHrAdministrator);
+
+    if (!isHr)
+    {
+        throw new WorkflowException(
+            "Only an HR Administrator may action this tier.");
+    }
+}
+
     }
 }
