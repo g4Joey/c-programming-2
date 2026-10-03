@@ -1,5 +1,6 @@
 using LeaveMate.Enums;
 using LeaveMate.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace LeaveMate.Data
@@ -13,6 +14,10 @@ namespace LeaveMate.Data
     /// </summary>
     public static class DbSeeder
     {
+        // Demo-only password shared by every seeded account so the team can
+        // sign in while testing. Replace before any real deployment.
+        public const string DemoPassword = "Password123!";
+
         public static void Seed(ApplicationDbContext db)
         {
             db.Database.EnsureCreated();
@@ -87,6 +92,15 @@ namespace LeaveMate.Data
                     Status = LeaveStatus.PendingSupervisorApproval,
                     SubmittedAtUtc = DateTime.UtcNow
                 });
+            }
+
+            db.SaveChanges();
+
+            // Give every account without a password the demo password (hashed).
+            var hasher = new PasswordHasher<Employee>();
+            foreach (var employee in db.Employees.Where(e => e.PasswordHash == ""))
+            {
+                employee.PasswordHash = hasher.HashPassword(employee, DemoPassword);
             }
 
             db.SaveChanges();
