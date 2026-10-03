@@ -1,8 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 using LeaveMate.Data;
 using LeaveMate.Models;
 using LeaveMate.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,47 +19,58 @@ namespace LeaveMate.Pages.Account
         }
 
         [BindProperty]
-        public int SelectedEmployeeId { get; set; }
+        [Required(ErrorMessage = "Please enter your email address.")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+        public string Email { get; set; } = string.Empty;
 
-        public List<SelectListItem> AccountOptions { get; private set; } = new();
+        [BindProperty]
+        [Required(ErrorMessage = "Please enter your password.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
 
-        public async Task OnGetAsync()
+        public void OnGet()
         {
-            await LoadOptionsAsync();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var employee = await _db.Employees.FirstOrDefaultAsync(e => e.Id == SelectedEmployeeId);
-            if (employee is null)
+            if (!ModelState.IsValid)
             {
-                await LoadOptionsAsync();
+                Password = string.Empty;
+                return Page();
+            }
+
+            var email = Email.Trim().ToLowerInvariant();
+            var employee = await _db.Employees.FirstOrDefaultAsync(e => e.Email.ToLower() == email);
+
+            // Same message for "unknown email" and "wrong password" so the page
+            // doesn't reveal which emails exist.
+            if (employee is null || !PasswordMatches(employee, Password))
+            {
+                ModelState.AddModelError(string.Empty, "Invalid email or password.");
+                Password = string.Empty;
                 return Page();
             }
 
             var isManager = await _db.Employees.AnyAsync(e => e.SupervisorId == employee.Id);
             var role = GetRole(employee, isManager);
+
+            HttpContext.Session.Clear();
             HttpContext.Session.SetActiveEmployee(employee, role);
 
             return RedirectToPage("/Index");
         }
 
-        private async Task LoadOptionsAsync()
+        private static bool PasswordMatches(Employee employee, string password)
         {
-            var employees = await _db.Employees.OrderBy(e => e.FullName).ToListAsync();
-            var managerIds = employees
-                .Where(e => e.SupervisorId.HasValue)
-                .Select(e => e.SupervisorId!.Value)
-                .ToHashSet();
-
-            AccountOptions = employees.Select(e => new SelectListItem(
-                $"{e.FullName} ({GetRole(e, managerIds.Contains(e.Id))})",
-                e.Id.ToString())).ToList();
-
-            if (AccountOptions.Count > 0 && SelectedEmployeeId == 0)
+            if (string.IsNullOrEmpty(employee.PasswordHash))
             {
-                SelectedEmployeeId = int.Parse(AccountOptions[0].Value);
+                return false;
             }
+
+            var hasher = new PasswordHasher<Employee>();
+            var result = hasher.VerifyHashedPassword(employee, employee.PasswordHash, password);
+            return result != PasswordVerificationResult.Failed;
         }
 
         private static string GetRole(Employee employee, bool isManager)
