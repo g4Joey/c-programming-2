@@ -1,0 +1,25 @@
+@page
+@model LeaveMate.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+    ViewData["ActiveNav"] = "settings";
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">Settings</h1>
+        <p class="subtle">Preferences for @Model.UserName · @Model.Role</p>
+    </header>
+
+    <section class="card settings-list" aria-label="Display preferences">
+        <label class="setting-row" for="compactMode">
+            <span><strong>Compact spacing</strong><small>Reduce gaps and padding across the app.</small></span>
+            <input type="checkbox" id="compactMode" data-preference="compact" />
+        </label>
+        <label class="setting-row" for="highContrast">
+            <span><strong>Higher contrast</strong><small>Strengthen borders and secondary text.</small></span>
+            <input type="checkbox" id="highContrast" data-preference="contrast" />
+        </label>
+        <p class="subtle settings-note" id="settingsSaved" aria-live="polite">Preferences are saved in this browser.</p>
+    </section>
+</div>

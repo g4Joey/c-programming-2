@@ -1,0 +1,49 @@
+@page
+@model LeaveMate.Pages.AccrualsModel
+@{
+    ViewData["Title"] = Model.Heading;
+    ViewData["ActiveNav"] = "accruals";
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">@Model.Heading</h1>
+        <p class="subtle">Current annual leave balances from employee records.</p>
+    </header>
+
+    <section class="card">
+        @if (!Model.Employees.Any())
+        {
+            <p class="empty-state">No employee balances are available.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            @if (Model.ShowEmployeeColumn)
+                            {
+                                <th>Employee</th>
+                            }
+                            <th>Annual Leave</th><th>Account</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <tr>
+                                @if (Model.ShowEmployeeColumn)
+                                {
+                                    <td>@employee.FullName</td>
+                                }
+                                <td><strong>@employee.AnnualLeaveBalanceDays days</strong></td>
+                                <td class="subtle">@employee.Email</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

@@ -5,7 +5,6 @@
     {
         ("dashboard", "Dashboard", "grid", "/"),
         ("requests", "Leave Requests", "inbox", "/LeaveHistory"),
-        ("approvals", "Supervisor Approvals", "check-circle", "/Approvals"),
         ("calendar", "Team Calendar", "calendar", "/Calendar"),
         ("accruals", "Accruals", "layers", "#"),
         ("reports", "Reports", "bar-chart", "#"),
@@ -19,7 +18,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(ViewData["Title"] ?? "LeaveMate") · TimeOff Central</title>
+    <title>@(ViewData["Title"] ?? "LeaveMate") · LeaveMate</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,7 +34,7 @@
             <div class="sidebar__brand">
                 <span class="brand__mark" aria-hidden="true">◆</span>
                 <span class="brand__text">
-                    <strong>TimeOff Central</strong>
+                    <strong>LeaveMate</strong>
                     <small>Enterprise HR Portal</small>
                 </span>
             </div>
@@ -64,9 +63,9 @@
                     <span class="nav-link__label">Sign Out</span>
                 </a>
                 <div class="user-chip">
-                    <span class="avatar" aria-hidden="true">SS</span>
+                    <span class="avatar" aria-hidden="true">JD</span>
                     <span class="user-chip__meta">
-                        <strong>Sampson Syllas</strong>
+                        <strong>Jane Doe</strong>
                         <small>HR Admin</small>
                     </span>
                 </div>
@@ -90,7 +89,7 @@
                     <span class="icon-btn__dot" aria-hidden="true"></span>
                 </button>
                 <button class="icon-btn" aria-label="History">↺</button>
-                <span class="avatar avatar--sm" aria-hidden="true">SS</span>
+                <span class="avatar avatar--sm" aria-hidden="true">JD</span>
             </div>
         </header>
 

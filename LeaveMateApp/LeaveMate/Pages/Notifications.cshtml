@@ -1,0 +1,52 @@
+@page
+@model LeaveMate.Pages.NotificationsModel
+@{
+    ViewData["Title"] = Model.Heading;
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">@Model.Heading</h1>
+        <p class="subtle">Pending leave activity for your account.</p>
+    </header>
+
+    <section class="card">
+        @if (!Model.Items.Any())
+        {
+            <p class="empty-state">You're all caught up.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            @if (Model.ShowEmployeeColumn)
+                            {
+                                <th>Employee</th>
+                            }
+                            <th>Request</th><th>Dates</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                @if (Model.ShowEmployeeColumn)
+                                {
+                                    <td>@item.EmployeeName</td>
+                                }
+                                <td>@item.Type leave</td>
+                                <td>@item.StartDate.ToString("MMM d")–@item.EndDate.ToString("MMM d, yyyy")</td>
+                                <td><span class="badge badge--pending">@item.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        <div class="section-heading notification-action">
+            <a class="btn btn--primary" href="@Model.QueueUrl">@Model.QueueLabel</a>
+        </div>
+    </section>
+</div>
