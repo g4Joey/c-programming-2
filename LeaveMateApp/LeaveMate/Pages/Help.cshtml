@@ -1,0 +1,19 @@
+@page
+@model LeaveMate.Pages.HelpModel
+@{
+    ViewData["Title"] = "Help";
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">Help</h1>
+        <p class="subtle">Find the page or action you need.</p>
+    </header>
+
+    <section class="card help-list">
+        <a href="/Requests/MyRequests"><strong>Leave requests</strong><span>Review request dates, status, and available actions.</span></a>
+        <a href="/Calendar"><strong>Team calendar</strong><span>Check approved leave and team coverage.</span></a>
+        <a href="/Accruals"><strong>Leave balances</strong><span>View annual leave days available to you or your team.</span></a>
+        <a href="/Settings"><strong>Display settings</strong><span>Adjust spacing and contrast for this browser.</span></a>
+    </section>
+</div>

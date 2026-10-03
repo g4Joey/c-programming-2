@@ -1,20 +1,28 @@
 @page
-@model LeaveMate.Pages.Requests.MyRequestsModel
+@model LeaveMate.Pages.ReportsModel
 @{
     ViewData["Title"] = Model.Heading;
-    ViewData["ActiveNav"] = "requests";
+    ViewData["ActiveNav"] = "reports";
 }
 
 <div class="page">
     <header class="page-head">
         <h1 class="display">@Model.Heading</h1>
-        <p class="subtle">Review leave requests and their approval status.</p>
+        <p class="subtle">A summary of leave requests visible to your role.</p>
     </header>
 
+    <section class="stat-grid report-grid" aria-label="Request totals">
+        <div class="card stat"><span class="label-caps">Total Requests</span><span class="stat__value">@Model.Requests.Count</span></div>
+        <div class="card stat"><span class="label-caps">Pending</span><span class="stat__value">@Model.PendingCount</span></div>
+        <div class="card stat"><span class="label-caps">Approved</span><span class="stat__value">@Model.ApprovedCount</span></div>
+        <div class="card stat"><span class="label-caps">Rejected</span><span class="stat__value">@Model.RejectedCount</span></div>
+    </section>
+
     <section class="card">
+        <h2 class="headline section-heading">Request history</h2>
         @if (!Model.Requests.Any())
         {
-            <p class="empty-state">No leave requests to show.</p>
+            <p class="empty-state">No requests are available for this report.</p>
         }
         else
         {
@@ -26,7 +34,7 @@
                             {
                                 <th>Employee</th>
                             }
-                            <th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th>Action</th>
+                            <th>Type</th><th>Dates</th><th>Days</th><th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -34,9 +42,9 @@
                         {
                             var badgeClass = request.Status switch
                             {
-                                Enums.LeaveStatus.Approved => "badge--approved",
-                                Enums.LeaveStatus.Rejected => "badge--rejected",
-                                Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval => "badge--pending",
+                                LeaveStatus.Approved => "badge--approved",
+                                LeaveStatus.Rejected => "badge--rejected",
+                                LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval => "badge--pending",
                                 _ => "badge--other"
                             };
                             <tr>
@@ -48,15 +56,6 @@
                                 <td>@request.StartDate.ToString("MMM d")–@request.EndDate.ToString("MMM d, yyyy")</td>
                                 <td>@request.DurationInDays</td>
                                 <td><span class="badge @badgeClass">@request.Status</span></td>
-                                <td>
-                                    @if (Model.CanRecallRequests && request.Status is Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval)
-                                    {
-                                        <form method="post" asp-page-handler="Recall">
-                                            <input type="hidden" name="requestId" value="@request.Id" />
-                                            <button type="submit" class="btn btn--secondary">Recall</button>
-                                        </form>
-                                    }
-                                </td>
                             </tr>
                         }
                     </tbody>

@@ -28,3 +28,4 @@ C:\Users\Hp\Desktop\UNIVERSITY OF GHANA\ASSIGNMENTS\DCIT 318\c-programming-2\Lea
 C:\Users\Hp\Desktop\UNIVERSITY OF GHANA\ASSIGNMENTS\DCIT 318\c-programming-2\LeaveMate.Web\obj\Debug\net8.0\LeaveMate.Web.pdb
 C:\Users\Hp\Desktop\UNIVERSITY OF GHANA\ASSIGNMENTS\DCIT 318\c-programming-2\LeaveMate.Web\obj\Debug\net8.0\LeaveMate.Web.genruntimeconfig.cache
 C:\Users\Hp\Desktop\UNIVERSITY OF GHANA\ASSIGNMENTS\DCIT 318\c-programming-2\LeaveMate.Web\obj\Debug\net8.0\ref\LeaveMate.Web.dll
+C:\Users\Hp\Desktop\UNIVERSITY OF GHANA\ASSIGNMENTS\DCIT 318\c-programming-2\LeaveMate.Web\bin\Debug\net8.0\appsettings.json

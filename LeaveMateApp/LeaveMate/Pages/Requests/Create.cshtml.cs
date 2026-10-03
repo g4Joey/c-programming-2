@@ -27,25 +27,33 @@ namespace LeaveMate.Pages.Requests
 
         public async Task OnGetAsync()
         {
-            if (!HttpContext.Session.IsActiveRole("Employee"))
+            var currentEmployeeId = HttpContext.Session.GetActiveEmployeeId();
+            if (currentEmployeeId is null)
             {
                 Response.Redirect("/Account/Login");
                 return;
             }
 
-            var currentEmployeeId = HttpContext.Session.GetActiveEmployeeId();
-            if (currentEmployeeId.HasValue)
+            if (!HttpContext.Session.IsActiveRole("Employee"))
             {
-                Input.EmployeeId = currentEmployeeId.Value;
+                Response.Redirect("/");
+                return;
             }
+
+            Input.EmployeeId = currentEmployeeId.Value;
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             var currentEmployeeId = HttpContext.Session.GetActiveEmployeeId();
-            if (currentEmployeeId is null || !HttpContext.Session.IsActiveRole("Employee"))
+            if (currentEmployeeId is null)
             {
                 return RedirectToPage("/Account/Login");
+            }
+
+            if (!HttpContext.Session.IsActiveRole("Employee"))
+            {
+                return RedirectToPage("/Index");
             }
 
             Input.EmployeeId = currentEmployeeId.Value;
