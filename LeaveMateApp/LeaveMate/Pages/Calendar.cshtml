@@ -1,0 +1,18 @@
+@page
+@model LeaveMate.Pages.CalendarModel
+@{
+    ViewData["Title"] = "Coverage Calendar";
+}
+
+<h1>Team Coverage Calendar</h1>
+<p class="card">
+    Real-time view of approved absences over the next 60 days, refreshed
+    automatically by the background coverage service every 30 seconds.
+    <span id="lastRefreshed"></span>
+</p>
+
+<div id="coverageGrid" class="card coverage-grid">Loading coverage data...</div>
+
+@section Scripts {
+    <script src="~/js/calendar.js"></script>
+}

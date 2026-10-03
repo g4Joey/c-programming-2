@@ -1,0 +1,48 @@
+@page
+@model LeaveMate.Pages.Requests.CreateModel
+@{
+    ViewData["Title"] = "Request Leave";
+}
+
+<h1>Request Leave</h1>
+
+@if (Model.Errors.Any())
+{
+    <div class="alert-error">
+        <ul>
+            @foreach (var err in Model.Errors)
+            {
+                <li>@err</li>
+            }
+        </ul>
+    </div>
+}
+
+<form method="post" class="card">
+    <div class="form-field">
+        <label asp-for="Input.Type">Leave Type</label>
+        <select asp-for="Input.Type">
+            @foreach (var type in Enum.GetValues<LeaveType>())
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-field">
+        <label asp-for="Input.StartDate">Start Date</label>
+        <input asp-for="Input.StartDate" type="date" />
+    </div>
+
+    <div class="form-field">
+        <label asp-for="Input.EndDate">End Date</label>
+        <input asp-for="Input.EndDate" type="date" />
+    </div>
+
+    <div class="form-field">
+        <label asp-for="Input.Reason">Reason (optional)</label>
+        <textarea asp-for="Input.Reason" rows="3"></textarea>
+    </div>
+
+    <button type="submit" class="btn">Submit Request</button>
+</form>

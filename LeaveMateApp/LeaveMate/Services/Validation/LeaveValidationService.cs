@@ -12,9 +12,6 @@ namespace LeaveMate.Services.Validation
     {
         private readonly ApplicationDbContext _db;
 
-        // Business rule thresholds. In a fuller build these would come from
-        // configuration / a policy table owned by HR Admin, kept as
-        // constants here to keep the engine's intent explicit.
         private const int MinDurationDays = 1;
         private const int MaxDurationDaysDefault = 30;
         private const int MaxUnpaidDurationDays = 90;
@@ -35,7 +32,7 @@ namespace LeaveMate.Services.Validation
             if (employee is null)
             {
                 result.AddError($"Employee with id {request.EmployeeId} was not found.");
-                return result; // No further rule can be evaluated without the employee.
+                return result;
             }
 
             ValidateDateOrdering(request, result);
@@ -44,8 +41,6 @@ namespace LeaveMate.Services.Validation
 
             if (result.IsValid)
             {
-                // These checks depend on a structurally sound date range,
-                // so only run them once the basics pass.
                 await ValidateNoOverlapAsync(request, result);
                 ValidateSufficientBalance(request, employee, result);
             }
@@ -119,7 +114,7 @@ namespace LeaveMate.Services.Validation
         {
             if (request.Type != LeaveType.Annual)
             {
-                return; // Balance tracking in this slice covers annual leave only.
+                return;
             }
 
             if (request.DurationInDays > employee.AnnualLeaveBalanceDays)

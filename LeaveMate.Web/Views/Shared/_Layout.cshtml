@@ -4,8 +4,9 @@
     (string Key, string Label, string Icon, string Href)[] navItems =
     {
         ("dashboard", "Dashboard", "grid", "/"),
-        ("requests", "Leave Requests", "inbox", "#"),
-        ("calendar", "Team Calendar", "calendar", "#"),
+        ("requests", "Leave Requests", "inbox", "/LeaveHistory"),
+        ("approvals", "Supervisor Approvals", "check-circle", "/Approvals"),
+        ("calendar", "Team Calendar", "calendar", "/Calendar"),
         ("accruals", "Accruals", "layers", "#"),
         ("reports", "Reports", "bar-chart", "#"),
         ("settings", "Settings", "settings", "#"),
@@ -63,9 +64,9 @@
                     <span class="nav-link__label">Sign Out</span>
                 </a>
                 <div class="user-chip">
-                    <span class="avatar" aria-hidden="true">JD</span>
+                    <span class="avatar" aria-hidden="true">SS</span>
                     <span class="user-chip__meta">
-                        <strong>Jane Doe</strong>
+                        <strong>Sampson Syllas</strong>
                         <small>HR Admin</small>
                     </span>
                 </div>
@@ -89,7 +90,7 @@
                     <span class="icon-btn__dot" aria-hidden="true"></span>
                 </button>
                 <button class="icon-btn" aria-label="History">↺</button>
-                <span class="avatar avatar--sm" aria-hidden="true">JD</span>
+                <span class="avatar avatar--sm" aria-hidden="true">SS</span>
             </div>
         </header>
 

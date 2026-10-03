@@ -23,8 +23,6 @@ namespace LeaveMate.Models
 
         public LeaveStatus Status { get; set; } = LeaveStatus.Draft;
 
-        // Which tier the request currently sits at, and who actioned the
-        // last decision (supervisor or HR admin employee id).
         public int? LastActionedByEmployeeId { get; set; }
         public string? SupervisorComment { get; set; }
         public string? HrComment { get; set; }

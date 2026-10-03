@@ -1,0 +1,73 @@
+@model LeaveMate.Web.Models.LeaveHistoryViewModel
+@{
+    ViewData["Title"] = "Leave History";
+    ViewData["ActiveNav"] = "requests";
+}
+
+<div class="page">
+    <div class="page-head">
+        <h1 class="display">Leave History</h1>
+        <p class="subtle">View your submitted leave requests and their current status.</p>
+    </div>
+
+    <section class="card">
+        <div class="feature-toolbar" aria-label="Filter leave history">
+            <label class="field field--search">
+                <span class="label-caps">Search</span>
+                <input id="historySearch" type="search" placeholder="Search leave type or status" />
+            </label>
+            <label class="field">
+                <span class="label-caps">Leave Type</span>
+                <select id="historyType">
+                    <option value="">All leave types</option>
+                    <option>Annual</option>
+                    <option>Sick</option>
+                    <option>Maternity</option>
+                    <option>Paternity</option>
+                    <option>Unpaid</option>
+                    <option>Compassionate</option>
+                </select>
+            </label>
+            <label class="field">
+                <span class="label-caps">Status</span>
+                <select id="historyStatus">
+                    <option value="">All statuses</option>
+                    <option>Pending</option>
+                    <option>Approved</option>
+                    <option>Rejected</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data" id="historyTable">
+                <thead>
+                    <tr>
+                        <th><button class="sort-button" type="button" data-sort="type">Leave Type</button></th>
+                        <th><button class="sort-button" type="button" data-sort="start">Start Date</button></th>
+                        <th><button class="sort-button" type="button" data-sort="end">End Date</button></th>
+                        <th><button class="sort-button" type="button" data-sort="days">Days</button></th>
+                        <th><button class="sort-button" type="button" data-sort="status">Status</button></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model.Requests)
+                    {
+                        <tr data-type="@request.LeaveType" data-start="@request.StartDate.ToString("yyyy-MM-dd")" data-end="@request.EndDate.ToString("yyyy-MM-dd")" data-days="@request.Days" data-status="@request.Status">
+                            <td>@request.LeaveType</td>
+                            <td class="subtle">@request.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td class="subtle">@request.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td class="data-num">@request.Days</td>
+                            <td><partial name="_StatusBadge" model="request.Status" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="empty-state" id="historyEmpty" hidden>No leave records found.</p>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/leave-history.js" asp-append-version="true"></script>
+}
