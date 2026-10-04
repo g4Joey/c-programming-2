@@ -16,7 +16,7 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -83,5 +83,8 @@ app.MapPost("/Account/SignOut", (HttpContext context) =>
 
 app.MapControllers();
 app.MapRazorPages();
+app.MapControllerRoute(
+    name: "portal",
+    pattern: "Portal/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

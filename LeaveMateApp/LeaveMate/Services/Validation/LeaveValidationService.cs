@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using LeaveMate.Data;
 using LeaveMate.Enums;
 using LeaveMate.Models;
+using LeaveMate.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace LeaveMate.Services.Validation
@@ -112,16 +113,17 @@ namespace LeaveMate.Services.Validation
         private static void ValidateSufficientBalance(
             LeaveRequest request, Employee employee, ValidationResult result)
         {
-            if (request.Type != LeaveType.Annual)
+            if (!LeaveWorkflowService.UsesTrackedBalance(request.Type))
             {
                 return;
             }
 
-            if (request.DurationInDays > employee.AnnualLeaveBalanceDays)
+            var balance = LeaveWorkflowService.GetBalance(employee, request.Type);
+            if (request.DurationInDays > balance)
             {
                 result.AddError(
                     $"Requested {request.DurationInDays} day(s) exceed the employee's remaining " +
-                    $"annual leave balance of {employee.AnnualLeaveBalanceDays} day(s).");
+                    $"{request.Type.ToString().ToLowerInvariant()} leave balance of {balance} day(s).");
             }
         }
     }

@@ -20,6 +20,14 @@ namespace LeaveMate.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Employee>()
+                .Property(e => e.SickLeaveBalanceDays)
+                .HasDefaultValue(5);
+
+            modelBuilder.Entity<Employee>()
+                .Property(e => e.PersonalLeaveBalanceDays)
+                .HasDefaultValue(2);
+
+            modelBuilder.Entity<Employee>()
                 .HasOne(e => e.Supervisor)
                 .WithMany()
                 .HasForeignKey(e => e.SupervisorId)

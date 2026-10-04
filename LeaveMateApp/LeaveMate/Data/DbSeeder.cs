@@ -2,6 +2,7 @@ using LeaveMate.Enums;
 using LeaveMate.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace LeaveMate.Data
 {
@@ -21,6 +22,7 @@ namespace LeaveMate.Data
         public static void Seed(ApplicationDbContext db)
         {
             db.Database.EnsureCreated();
+            EnsureAdditionalLeaveBalanceColumns(db);
 
             var hrAdmin = db.Employees.FirstOrDefault(e => e.Email == "ama.boateng@leavemate.local") ?? new Employee
             {
@@ -104,6 +106,69 @@ namespace LeaveMate.Data
             }
 
             db.SaveChanges();
+        }
+
+        private static void EnsureAdditionalLeaveBalanceColumns(ApplicationDbContext db)
+        {
+            if (db.Database.IsSqlite())
+            {
+                var connection = db.Database.GetDbConnection();
+                var closeConnection = connection.State != System.Data.ConnectionState.Open;
+                if (closeConnection)
+                {
+                    connection.Open();
+                }
+
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = "PRAGMA table_info('Employees');";
+                    using var reader = command.ExecuteReader();
+                    var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    while (reader.Read())
+                    {
+                        columns.Add(reader.GetString(1));
+                    }
+
+                    reader.Close();
+                    if (!columns.Contains(nameof(Employee.SickLeaveBalanceDays)))
+                    {
+                        db.Database.ExecuteSqlRaw(
+                            "ALTER TABLE Employees ADD COLUMN SickLeaveBalanceDays INTEGER NOT NULL DEFAULT 5;");
+                    }
+
+                    if (!columns.Contains(nameof(Employee.PersonalLeaveBalanceDays)))
+                    {
+                        db.Database.ExecuteSqlRaw(
+                            "ALTER TABLE Employees ADD COLUMN PersonalLeaveBalanceDays INTEGER NOT NULL DEFAULT 2;");
+                    }
+                }
+                finally
+                {
+                    if (closeConnection)
+                    {
+                        connection.Close();
+                    }
+                }
+
+                return;
+            }
+
+            if (db.Database.IsSqlServer())
+            {
+                db.Database.ExecuteSqlRaw("""
+                    IF COL_LENGTH('Employees', 'SickLeaveBalanceDays') IS NULL
+                        ALTER TABLE Employees ADD SickLeaveBalanceDays INT NOT NULL
+                            CONSTRAINT DF_Employees_SickLeaveBalanceDays DEFAULT 5;
+                    IF COL_LENGTH('Employees', 'PersonalLeaveBalanceDays') IS NULL
+                        ALTER TABLE Employees ADD PersonalLeaveBalanceDays INT NOT NULL
+                            CONSTRAINT DF_Employees_PersonalLeaveBalanceDays DEFAULT 2;
+                    """);
+                return;
+            }
+
+            throw new NotSupportedException(
+                $"Leave balance schema updates are not supported for provider '{db.Database.ProviderName}'.");
         }
     }
 }

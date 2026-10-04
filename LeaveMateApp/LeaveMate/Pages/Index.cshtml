@@ -38,15 +38,15 @@
     <section class="stat-grid" aria-label="Leave balances">
         <div class="card card--accent stat">
             <span class="label-caps">Annual Leave</span>
-            <span class="stat__value">14 <span>days left</span></span>
+            <span class="stat__value">@(Model.AnnualLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
         </div>
         <div class="card card--accent stat">
             <span class="label-caps">Sick Leave</span>
-            <span class="stat__value">5 <span>days left</span></span>
+            <span class="stat__value">@(Model.SickLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
         </div>
         <div class="card card--accent stat">
             <span class="label-caps">Personal Days</span>
-            <span class="stat__value">2 <span>days left</span></span>
+            <span class="stat__value">@(Model.PersonalLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
         </div>
     </section>
 

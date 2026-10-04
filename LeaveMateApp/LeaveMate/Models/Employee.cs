@@ -25,9 +25,10 @@ namespace LeaveMate.Models
 
         public bool IsHrAdministrator { get; set; }
 
-        // Remaining leave days per type, used by the validation engine's
-        // balance check. Kept simple (Annual balance only) for this slice.
+        // Remaining tracked leave days, used by request validation and approval.
         public int AnnualLeaveBalanceDays { get; set; } = 21;
+        public int SickLeaveBalanceDays { get; set; } = 5;
+        public int PersonalLeaveBalanceDays { get; set; } = 2;
 
         public ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
     }

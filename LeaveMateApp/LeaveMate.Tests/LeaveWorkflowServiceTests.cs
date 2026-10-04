@@ -79,13 +79,121 @@ namespace LeaveMate.Tests
         {
             using var db = NewInMemoryDb(nameof(HrApproval_CompletesWorkflow));
             var (_, employee, hr) = SeedOrg(db);
+            employee.AnnualLeaveBalanceDays = 12;
             var workflow = new LeaveWorkflowService(db);
 
-            var request = new LeaveRequest { EmployeeId = employee.Id, Status = LeaveStatus.PendingHrApproval };
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = LeaveType.Annual,
+                StartDate = new DateTime(2026, 10, 5),
+                EndDate = new DateTime(2026, 10, 7),
+                Status = LeaveStatus.PendingHrApproval
+            };
 
             await workflow.ApplyHrDecisionAsync(request, hr.Id, approve: true, comment: "Approved");
 
             Assert.Equal(LeaveStatus.Approved, request.Status);
+            await db.SaveChangesAsync();
+            await db.Entry(employee).ReloadAsync();
+            Assert.Equal(9, employee.AnnualLeaveBalanceDays);
+        }
+
+        [Fact]
+        public async Task HrApproval_NonAnnualLeaveDoesNotDeductAnnualBalance()
+        {
+            using var db = NewInMemoryDb(nameof(HrApproval_NonAnnualLeaveDoesNotDeductAnnualBalance));
+            var (_, employee, hr) = SeedOrg(db);
+            employee.AnnualLeaveBalanceDays = 12;
+            var workflow = new LeaveWorkflowService(db);
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = LeaveType.Sick,
+                StartDate = new DateTime(2026, 10, 5),
+                EndDate = new DateTime(2026, 10, 7),
+                Status = LeaveStatus.PendingHrApproval
+            };
+
+            await workflow.ApplyHrDecisionAsync(request, hr.Id, approve: true, comment: "Approved");
+
+            Assert.Equal(LeaveStatus.Approved, request.Status);
+            Assert.Equal(12, employee.AnnualLeaveBalanceDays);
+        }
+
+        [Theory]
+        [InlineData(LeaveType.Sick)]
+        [InlineData(LeaveType.Personal)]
+        public async Task HrApproval_DeductsMatchingSickOrPersonalBalance(LeaveType type)
+        {
+            using var db = NewInMemoryDb($"{nameof(HrApproval_DeductsMatchingSickOrPersonalBalance)}_{type}");
+            var (_, employee, hr) = SeedOrg(db);
+            employee.AnnualLeaveBalanceDays = 12;
+            employee.SickLeaveBalanceDays = 10;
+            employee.PersonalLeaveBalanceDays = 8;
+            var workflow = new LeaveWorkflowService(db);
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = type,
+                StartDate = new DateTime(2026, 10, 5),
+                EndDate = new DateTime(2026, 10, 7),
+                Status = LeaveStatus.PendingHrApproval
+            };
+
+            await workflow.ApplyHrDecisionAsync(request, hr.Id, approve: true, comment: "Approved");
+            await db.SaveChangesAsync();
+            await db.Entry(employee).ReloadAsync();
+
+            Assert.Equal(LeaveStatus.Approved, request.Status);
+            Assert.Equal(12, employee.AnnualLeaveBalanceDays);
+            Assert.Equal(type == LeaveType.Sick ? 7 : 10, employee.SickLeaveBalanceDays);
+            Assert.Equal(type == LeaveType.Personal ? 5 : 8, employee.PersonalLeaveBalanceDays);
+        }
+
+        [Fact]
+        public async Task HrRejection_DoesNotDeductAnnualLeaveBalance()
+        {
+            using var db = NewInMemoryDb(nameof(HrRejection_DoesNotDeductAnnualLeaveBalance));
+            var (_, employee, hr) = SeedOrg(db);
+            employee.AnnualLeaveBalanceDays = 12;
+            var workflow = new LeaveWorkflowService(db);
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = LeaveType.Annual,
+                StartDate = new DateTime(2026, 10, 5),
+                EndDate = new DateTime(2026, 10, 7),
+                Status = LeaveStatus.PendingHrApproval
+            };
+
+            await workflow.ApplyHrDecisionAsync(request, hr.Id, approve: false, comment: "Rejected");
+
+            Assert.Equal(LeaveStatus.Rejected, request.Status);
+            Assert.Equal(12, employee.AnnualLeaveBalanceDays);
+        }
+
+        [Fact]
+        public async Task HrApproval_WithInsufficientAnnualBalance_IsRejected()
+        {
+            using var db = NewInMemoryDb(nameof(HrApproval_WithInsufficientAnnualBalance_IsRejected));
+            var (_, employee, hr) = SeedOrg(db);
+            employee.AnnualLeaveBalanceDays = 2;
+            var workflow = new LeaveWorkflowService(db);
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = LeaveType.Annual,
+                StartDate = new DateTime(2026, 10, 5),
+                EndDate = new DateTime(2026, 10, 7),
+                Status = LeaveStatus.PendingHrApproval
+            };
+
+            await Assert.ThrowsAsync<WorkflowException>(() =>
+                workflow.ApplyHrDecisionAsync(request, hr.Id, approve: true, comment: "Approved"));
+
+            Assert.Equal(LeaveStatus.PendingHrApproval, request.Status);
+            Assert.Equal(2, employee.AnnualLeaveBalanceDays);
         }
 
         [Fact]
