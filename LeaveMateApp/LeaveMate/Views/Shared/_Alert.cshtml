@@ -1,0 +1,30 @@
+@model LeaveMate.Web.Models.AlertViewModel
+@*
+    Reusable alert / message banner.
+    Usage:
+        <partial name="_Alert" model='new AlertViewModel {
+            Kind = AlertKind.Success, Title = "Saved", Message = "Your request was submitted." }' />
+*@
+@{
+    var (cls, icon) = Model.Kind switch
+    {
+        AlertKind.Success => ("alert--success", "✓"),
+        AlertKind.Danger => ("alert--danger", "✕"),
+        AlertKind.Warning => ("alert--warning", "!"),
+        _ => ("alert--info", "i"),
+    };
+}
+<div class="alert @cls" role="alert">
+    <span class="alert__icon" aria-hidden="true">@icon</span>
+    <div class="alert__body">
+        @if (!string.IsNullOrEmpty(Model.Title))
+        {
+            <strong class="alert__title">@Model.Title</strong>
+        }
+        <span class="alert__message">@Model.Message</span>
+    </div>
+    @if (Model.Dismissible)
+    {
+        <button class="alert__close" type="button" data-alert-dismiss aria-label="Dismiss">✕</button>
+    }
+</div>

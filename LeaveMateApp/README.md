@@ -1,8 +1,8 @@
 # LeaveMate
 
-Corporate leave management system. ASP.NET Core Razor Pages front end,
-C# controller/service backend, EF Core over SQLite (dev) / SQL Server
-(production), per the PROGRAMMING II semester project proposal.
+Corporate leave management system. ASP.NET Core Razor Pages and MVC
+front ends, C# controller/service backend, EF Core over SQLite (dev) /
+SQL Server (production), per the PROGRAMMING II semester project proposal.
 
 ## Running locally
 
@@ -16,7 +16,12 @@ Supervisor, and two direct reports) and serves both the UI and the
 JSON API from the same process:
 
 - UI: http://localhost:5000
+- MVC portal: http://localhost:5000/Portal
 - API docs (Swagger, dev only): http://localhost:5000/swagger
+
+The MVC portal runs in the same app as the Razor Pages UI and API. It uses
+the same signed-in session; its Sign Out button clears that session and sends
+the user back to the sign-in page.
 
 To target SQL Server instead of the bundled SQLite file, set
 `"UseSqlite": false` in `appsettings.json` and update
@@ -77,3 +82,8 @@ To let 12 people work in parallel without conflicts:
 3. **Real-time coverage matrix** — `CoverageRefreshService` recomputes
    a 60-day coverage snapshot in the background every 30 seconds;
    `Pages/Calendar.cshtml` polls it for a live grid.
+4. **Leave balance tracking** — final HR approval deducts the approved
+   request duration from the matching Annual (21-day), Sick (5-day), or
+   Personal (2-day) balance. Rejected requests do not reduce balances,
+   and other leave types are not charged against these allowances. Both
+   dashboards display persisted balances.

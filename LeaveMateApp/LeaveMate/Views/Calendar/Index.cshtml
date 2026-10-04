@@ -1,0 +1,44 @@
+@model IEnumerable<LeaveMate.Web.Models.CalendarEventViewModel>
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@{
+    ViewData["Title"] = "Team Calendar";
+    ViewData["ActiveNav"] = "calendar";
+    var calendarJsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    calendarJsonOptions.Converters.Add(new JsonStringEnumConverter());
+}
+
+<div class="page">
+    <div class="page-head">
+        <h1 class="display">Team Calendar</h1>
+        <p class="subtle">See when your team is away and plan coverage with confidence.</p>
+    </div>
+
+    <section class="card calendar-card">
+        <div class="calendar-toolbar">
+            <div class="calendar-navigation">
+                <button class="btn btn--secondary" id="previousMonth" type="button" aria-label="Previous month">&lt;</button>
+                <button class="btn btn--ghost" id="todayMonth" type="button">Today</button>
+                <button class="btn btn--secondary" id="nextMonth" type="button" aria-label="Next month">&gt;</button>
+            </div>
+            <h2 class="headline" id="calendarHeading"></h2>
+        </div>
+        <div class="calendar-weekdays" aria-hidden="true">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="calendar-grid" id="calendarGrid" aria-live="polite"></div>
+    </section>
+</div>
+
+<partial name="_Modal" model="@(new ModalViewModel {
+    Id = "calendarEventModal",
+    Title = "Leave details",
+    Body = "Select a leave event to view its details.",
+    ConfirmText = "Close",
+    CancelText = "Close",
+    ConfirmKind = AlertKind.Info })" />
+
+@section Scripts {
+    <script id="calendarEvents" type="application/json">@Html.Raw(JsonSerializer.Serialize(Model, calendarJsonOptions))</script>
+    <script src="~/portal/js/calendar.js" asp-append-version="true"></script>
+}
