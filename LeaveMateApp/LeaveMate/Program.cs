@@ -51,12 +51,39 @@ builder.Services.AddHostedService<CoverageRefreshService>();
 builder.Services.AddHttpClient<LeaveMateApiClient>(client =>
 {
     // Self-referencing base address: Razor Pages call this app's own API.
-    var defaultUrl = !string.IsNullOrEmpty(port) ? $"http://localhost:{port}" : "http://localhost:5000";
-    var appBaseUrl = builder.Configuration["AppBaseUrl"]
-        ?? builder.Configuration["urls"]
-        ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
-        ?? defaultUrl;
-    client.BaseAddress = new Uri(appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]);
+    // Determine the listening port for local loopback (127.0.0.1).
+    // NEVER use '+' or '*' or '0.0.0.0' as the client host name because HttpClient cannot resolve them.
+    var appBaseUrl = builder.Configuration["AppBaseUrl"];
+    if (string.IsNullOrWhiteSpace(appBaseUrl))
+    {
+        var effectivePort = "5000";
+        if (!string.IsNullOrEmpty(port))
+        {
+            effectivePort = port;
+        }
+        else
+        {
+            var rawUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+                ?? builder.Configuration["urls"];
+            if (!string.IsNullOrEmpty(rawUrls))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(rawUrls, @":(\d+)");
+                if (match.Success)
+                {
+                    effectivePort = match.Groups[1].Value;
+                }
+            }
+        }
+        appBaseUrl = $"http://127.0.0.1:{effectivePort}";
+    }
+
+    var cleanUrl = appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]
+        .Replace("://+:", "://127.0.0.1:")
+        .Replace("://*:", "://127.0.0.1:")
+        .Replace("://0.0.0.0:", "://127.0.0.1:")
+        .TrimEnd('/') + "/";
+
+    client.BaseAddress = new Uri(cleanUrl);
 });
 
 var app = builder.Build();
