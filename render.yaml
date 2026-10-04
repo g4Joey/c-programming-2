@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: leavemate
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /Account/Login
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: UseSqlite
+        value: "true"
