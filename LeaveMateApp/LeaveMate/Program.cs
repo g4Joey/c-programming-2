@@ -20,6 +20,12 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 // --- Data Access (Data Access Engineer / DBA tracks) -----------------------
 // SQLite is used by default so the app runs with zero external setup;
 // flip "UseSqlite": false in appsettings.json to target the SQL Server
@@ -45,10 +51,11 @@ builder.Services.AddHostedService<CoverageRefreshService>();
 builder.Services.AddHttpClient<LeaveMateApiClient>(client =>
 {
     // Self-referencing base address: Razor Pages call this app's own API.
+    var defaultUrl = !string.IsNullOrEmpty(port) ? $"http://localhost:{port}" : "http://localhost:5000";
     var appBaseUrl = builder.Configuration["AppBaseUrl"]
         ?? builder.Configuration["urls"]
         ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
-        ?? "http://localhost:5000";
+        ?? defaultUrl;
     client.BaseAddress = new Uri(appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]);
 });
 
