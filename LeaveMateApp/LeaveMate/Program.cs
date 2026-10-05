@@ -1,6 +1,7 @@
 using LeaveMate.Data;
 using LeaveMate.Middleware;
 using LeaveMate.Services;
+using LeaveMate.Services.Email;
 using LeaveMate.Services.Integration;
 using LeaveMate.Services.Validation;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // --- Backend track: validation engine + workflow state machine -------------
 builder.Services.AddScoped<ILeaveValidationService, LeaveValidationService>();
 builder.Services.AddScoped<LeaveWorkflowService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailNotificationService, SmtpEmailNotificationService>();
 
 // --- Backend track: background coverage matrix refresh (async handlers) ---
 builder.Services.AddSingleton<CoverageCache>();

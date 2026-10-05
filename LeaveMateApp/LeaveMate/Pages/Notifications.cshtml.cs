@@ -19,7 +19,6 @@ public class NotificationsModel : PageModel
     public string Heading { get; private set; } = "Notifications";
     public string QueueUrl { get; private set; } = "/Requests/MyRequests";
     public string QueueLabel { get; private set; } = "View leave requests";
-    public bool ShowEmployeeColumn { get; private set; }
 
     public async Task OnGetAsync()
     {
@@ -38,7 +37,6 @@ public class NotificationsModel : PageModel
             return;
         }
 
-        ShowEmployeeColumn = true;
         if (role == "Manager")
         {
             Heading = "Team Notifications";
@@ -67,4 +65,36 @@ public class NotificationsModel : PageModel
 
     private static bool IsPending(LeaveRequestResponseDto request) =>
         request.Status is LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval;
+
+    public static string GetStatusLabel(LeaveStatus status) => status switch
+    {
+        LeaveStatus.Draft => "Draft",
+        LeaveStatus.PendingSupervisorApproval => "Pending supervisor approval",
+        LeaveStatus.PendingHrApproval => "Pending HR approval",
+        LeaveStatus.Approved => "Approved",
+        LeaveStatus.Rejected => "Rejected",
+        LeaveStatus.Recalled => "Recalled",
+        LeaveStatus.Cancelled => "Cancelled",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown leave status.")
+    };
+
+    public static string GetNextActionLabel(LeaveStatus status) => status switch
+    {
+        LeaveStatus.Draft => "Not submitted",
+        LeaveStatus.PendingSupervisorApproval => "Awaiting supervisor approval",
+        LeaveStatus.PendingHrApproval => "Awaiting HR approval",
+        LeaveStatus.Approved or LeaveStatus.Rejected or LeaveStatus.Recalled or LeaveStatus.Cancelled
+            => "No further approval required",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown leave status.")
+    };
+
+    public static string GetStatusBadgeClass(LeaveStatus status) => status switch
+    {
+        LeaveStatus.Draft => "badge--other",
+        LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval => "badge--pending",
+        LeaveStatus.Approved => "badge--approved",
+        LeaveStatus.Rejected => "badge--rejected",
+        LeaveStatus.Recalled or LeaveStatus.Cancelled => "badge--other",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown leave status.")
+    };
 }

@@ -21,24 +21,30 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            @if (Model.ShowEmployeeColumn)
-                            {
-                                <th>Employee</th>
-                            }
-                            <th>Request</th><th>Dates</th><th>Status</th>
+                            <th>Requester</th>
+                            <th>Leave type</th>
+                            <th>Start date</th>
+                            <th>End date</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Next action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.Items)
                         {
                             <tr>
-                                @if (Model.ShowEmployeeColumn)
-                                {
-                                    <td>@item.EmployeeName</td>
-                                }
-                                <td>@item.Type leave</td>
-                                <td>@item.StartDate.ToString("MMM d")–@item.EndDate.ToString("MMM d, yyyy")</td>
-                                <td><span class="badge badge--pending">@item.Status</span></td>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.Type</td>
+                                <td>@item.StartDate.ToString("MMM d, yyyy")</td>
+                                <td>@item.EndDate.ToString("MMM d, yyyy")</td>
+                                <td>@item.DurationInDays</td>
+                                <td>
+                                    <span class="badge @NotificationsModel.GetStatusBadgeClass(item.Status)">
+                                        @NotificationsModel.GetStatusLabel(item.Status)
+                                    </span>
+                                </td>
+                                <td>@NotificationsModel.GetNextActionLabel(item.Status)</td>
                             </tr>
                         }
                     </tbody>
