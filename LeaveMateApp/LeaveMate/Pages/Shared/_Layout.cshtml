@@ -3,6 +3,7 @@
     var currentUserName = Context.Session.GetActiveEmployeeName() ?? "Jane Mensah";
     var currentUserRole = Context.Session.GetActiveEmployeeRole() ?? "Employee";
     var isSignedIn = Context.Session.GetActiveEmployeeId().HasValue;
+    var isLoginPage = Context.Request.Path.StartsWithSegments("/Account/Login", StringComparison.OrdinalIgnoreCase);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +14,9 @@
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    <div class="app-shell">
+    <div class="app-shell @(isLoginPage ? "app-shell--sign-in" : string.Empty)">
+        @if (!isLoginPage)
+        {
         <nav class="nav-rail" id="primary-nav" aria-label="Primary navigation">
             <div class="nav-rail__brand">LeaveMate</div>
             @if (isSignedIn)
@@ -49,11 +52,15 @@
                 <a class="nav-rail__link" href="/Account/Login">Sign In</a>
             }
         </nav>
+        }
 
-        <main class="app-content">
+        <main class="app-content @(isLoginPage ? "app-content--sign-in" : string.Empty)">
+            @if (!isLoginPage)
+            {
             <div class="app-content__toolbar">
                 <button type="button" class="btn btn--secondary nav-toggle" aria-controls="primary-nav" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">Collapse sidebar</button>
             </div>
+            }
             @RenderBody()
         </main>
     </div>
