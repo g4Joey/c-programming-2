@@ -2,6 +2,7 @@ using LeaveMate.Enums;
 using LeaveMate.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace LeaveMate.Data
 {
@@ -21,6 +22,8 @@ namespace LeaveMate.Data
         public static void Seed(ApplicationDbContext db)
         {
             db.Database.EnsureCreated();
+            EnsureAuditLogTable(db);
+            EnsureAdditionalLeaveBalanceColumns(db);
 
             var hrAdmin = db.Employees.FirstOrDefault(e => e.Email == "ama.boateng@leavemate.local") ?? new Employee
             {
@@ -104,6 +107,127 @@ namespace LeaveMate.Data
             }
 
             db.SaveChanges();
+        }
+
+        private static void EnsureAuditLogTable(ApplicationDbContext db)
+        {
+            if (db.Database.IsSqlite())
+            {
+                db.Database.ExecuteSqlRaw("""
+                    CREATE TABLE IF NOT EXISTS "AuditLogs" (
+                        "Id" INTEGER NOT NULL CONSTRAINT "PK_AuditLogs" PRIMARY KEY AUTOINCREMENT,
+                        "LeaveRequestId" INTEGER NOT NULL,
+                        "ActorEmployeeId" INTEGER NOT NULL,
+                        "Action" TEXT NOT NULL,
+                        "PreviousStatus" TEXT NOT NULL,
+                        "NewStatus" TEXT NOT NULL,
+                        "OccurredAtUtc" TEXT NOT NULL,
+                        CONSTRAINT "FK_AuditLogs_LeaveRequests_LeaveRequestId"
+                            FOREIGN KEY ("LeaveRequestId") REFERENCES "LeaveRequests" ("Id") ON DELETE RESTRICT,
+                        CONSTRAINT "FK_AuditLogs_Employees_ActorEmployeeId"
+                            FOREIGN KEY ("ActorEmployeeId") REFERENCES "Employees" ("Id") ON DELETE RESTRICT
+                    );
+                    CREATE INDEX IF NOT EXISTS "IX_AuditLogs_LeaveRequestId_OccurredAtUtc"
+                        ON "AuditLogs" ("LeaveRequestId", "OccurredAtUtc");
+                    CREATE INDEX IF NOT EXISTS "IX_AuditLogs_ActorEmployeeId"
+                        ON "AuditLogs" ("ActorEmployeeId");
+                    """);
+                return;
+            }
+
+            if (db.Database.IsSqlServer())
+            {
+                db.Database.ExecuteSqlRaw("""
+                    IF OBJECT_ID(N'[dbo].[AuditLogs]', N'U') IS NULL
+                    BEGIN
+                        CREATE TABLE [dbo].[AuditLogs] (
+                            [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_AuditLogs] PRIMARY KEY,
+                            [LeaveRequestId] int NOT NULL,
+                            [ActorEmployeeId] int NOT NULL,
+                            [Action] nvarchar(64) NOT NULL,
+                            [PreviousStatus] nvarchar(64) NOT NULL,
+                            [NewStatus] nvarchar(64) NOT NULL,
+                            [OccurredAtUtc] datetime2 NOT NULL,
+                            CONSTRAINT [FK_AuditLogs_LeaveRequests_LeaveRequestId]
+                                FOREIGN KEY ([LeaveRequestId]) REFERENCES [dbo].[LeaveRequests] ([Id]) ON DELETE NO ACTION,
+                            CONSTRAINT [FK_AuditLogs_Employees_ActorEmployeeId]
+                                FOREIGN KEY ([ActorEmployeeId]) REFERENCES [dbo].[Employees] ([Id]) ON DELETE NO ACTION
+                        );
+                    END;
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_LeaveRequestId_OccurredAtUtc' AND object_id = OBJECT_ID(N'[dbo].[AuditLogs]'))
+                        CREATE INDEX [IX_AuditLogs_LeaveRequestId_OccurredAtUtc] ON [dbo].[AuditLogs] ([LeaveRequestId], [OccurredAtUtc]);
+                    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_ActorEmployeeId' AND object_id = OBJECT_ID(N'[dbo].[AuditLogs]'))
+                        CREATE INDEX [IX_AuditLogs_ActorEmployeeId] ON [dbo].[AuditLogs] ([ActorEmployeeId]);
+                    """);
+                return;
+            }
+
+            throw new NotSupportedException(
+                $"Audit log schema creation is not supported for provider '{db.Database.ProviderName}'.");
+        }
+
+        private static void EnsureAdditionalLeaveBalanceColumns(ApplicationDbContext db)
+        {
+            if (db.Database.IsSqlite())
+            {
+                var connection = db.Database.GetDbConnection();
+                var closeConnection = connection.State != System.Data.ConnectionState.Open;
+                if (closeConnection)
+                {
+                    connection.Open();
+                }
+
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = "PRAGMA table_info('Employees');";
+                    using var reader = command.ExecuteReader();
+                    var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    while (reader.Read())
+                    {
+                        columns.Add(reader.GetString(1));
+                    }
+
+                    reader.Close();
+                    if (!columns.Contains(nameof(Employee.SickLeaveBalanceDays)))
+                    {
+                        db.Database.ExecuteSqlRaw(
+                            "ALTER TABLE Employees ADD COLUMN SickLeaveBalanceDays INTEGER NOT NULL DEFAULT 5;");
+                    }
+
+                    if (!columns.Contains(nameof(Employee.PersonalLeaveBalanceDays)))
+                    {
+                        db.Database.ExecuteSqlRaw(
+                            "ALTER TABLE Employees ADD COLUMN PersonalLeaveBalanceDays INTEGER NOT NULL DEFAULT 2;");
+                    }
+                }
+                finally
+                {
+                    if (closeConnection)
+                    {
+                        connection.Close();
+                    }
+                }
+
+                return;
+            }
+
+            if (db.Database.IsSqlServer())
+            {
+                db.Database.ExecuteSqlRaw("""
+                    IF COL_LENGTH('Employees', 'SickLeaveBalanceDays') IS NULL
+                        ALTER TABLE Employees ADD SickLeaveBalanceDays INT NOT NULL
+                            CONSTRAINT DF_Employees_SickLeaveBalanceDays DEFAULT 5;
+                    IF COL_LENGTH('Employees', 'PersonalLeaveBalanceDays') IS NULL
+                        ALTER TABLE Employees ADD PersonalLeaveBalanceDays INT NOT NULL
+                            CONSTRAINT DF_Employees_PersonalLeaveBalanceDays DEFAULT 2;
+                    """);
+                return;
+            }
+
+            throw new NotSupportedException(
+                $"Leave balance schema updates are not supported for provider '{db.Database.ProviderName}'.");
         }
     }
 }

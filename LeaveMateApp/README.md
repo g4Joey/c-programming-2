@@ -1,8 +1,8 @@
 # LeaveMate
 
-Corporate leave management system. ASP.NET Core Razor Pages front end,
-C# controller/service backend, EF Core over SQLite (dev) / SQL Server
-(production), per the PROGRAMMING II semester project proposal.
+Corporate leave management system. ASP.NET Core Razor Pages and MVC
+front ends, C# controller/service backend, EF Core over SQLite (dev) /
+SQL Server (production), per the PROGRAMMING II semester project proposal.
 
 ## Running locally
 
@@ -16,11 +16,39 @@ Supervisor, and two direct reports) and serves both the UI and the
 JSON API from the same process:
 
 - UI: http://localhost:5000
+- MVC portal: http://localhost:5000/Portal
 - API docs (Swagger, dev only): http://localhost:5000/swagger
+
+The MVC portal runs in the same app as the Razor Pages UI and API. It uses
+the same signed-in session; its Sign Out button clears that session and sends
+the user back to the sign-in page.
 
 To target SQL Server instead of the bundled SQLite file, set
 `"UseSqlite": false` in `appsettings.json` and update
 `ConnectionStrings:DefaultConnection`.
+
+## Email notifications
+
+Email is disabled by default. To enable SMTP delivery, configure the
+following environment variables locally and use deployment environment
+settings in production:
+
+| Variable | Required | Description |
+|---|---|---|
+| `Email__Enabled` | Yes | Set to `true` to enable delivery. |
+| `Email__SmtpHost` | Yes | SMTP server host name. |
+| `Email__SmtpPort` | Yes | SMTP server port (defaults to `587`). |
+| `Email__UseSsl` | Yes | Enable TLS/SSL (defaults to `true`). |
+| `Email__FromAddress` | Yes | Valid sender email address. |
+| `Email__FromName` | No | Sender display name (defaults to `LeaveMate`). |
+| `Email__Username` | No | SMTP username, when authentication is required. |
+| `Email__Password` | Conditional | SMTP password, required when a username is configured. |
+
+No SMTP credentials are included in the repository. Messages are sent after
+the leave action is saved; failed delivery is logged and does not undo the
+saved request or audit record. Messages contain the request ID, requester,
+leave type, dates, duration, action, current status, and action time, but omit
+the leave reason.
 
 ## Running the tests
 
@@ -77,3 +105,8 @@ To let 12 people work in parallel without conflicts:
 3. **Real-time coverage matrix** — `CoverageRefreshService` recomputes
    a 60-day coverage snapshot in the background every 30 seconds;
    `Pages/Calendar.cshtml` polls it for a live grid.
+4. **Leave balance tracking** — final HR approval deducts the approved
+   request duration from the matching Annual (21-day), Sick (5-day), or
+   Personal (2-day) balance. Rejected requests do not reduce balances,
+   and other leave types are not charged against these allowances. Both
+   dashboards display persisted balances.

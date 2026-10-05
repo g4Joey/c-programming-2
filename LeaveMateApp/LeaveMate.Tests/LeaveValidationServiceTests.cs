@@ -128,6 +128,30 @@ namespace LeaveMate.Tests
             Assert.Contains(result.Errors, e => e.Contains("balance"));
         }
 
+        [Theory]
+        [InlineData(LeaveType.Sick)]
+        [InlineData(LeaveType.Personal)]
+        public async Task Rejects_InsufficientSickOrPersonalBalance(LeaveType type)
+        {
+            using var db = NewInMemoryDb($"{nameof(Rejects_InsufficientSickOrPersonalBalance)}_{type}");
+            var employee = SeedEmployee(db);
+            employee.SickLeaveBalanceDays = 2;
+            employee.PersonalLeaveBalanceDays = 2;
+            var start = NextMonday(DateTime.UtcNow.Date.AddDays(1));
+            var request = new LeaveRequest
+            {
+                EmployeeId = employee.Id,
+                Type = type,
+                StartDate = start,
+                EndDate = start.AddDays(2)
+            };
+
+            var result = await new LeaveValidationService(db).ValidateAsync(request);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e.Contains("balance"));
+        }
+
         [Fact]
         public async Task Accepts_ValidRequest()
         {

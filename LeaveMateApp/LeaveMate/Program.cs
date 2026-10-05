@@ -1,6 +1,7 @@
 using LeaveMate.Data;
 using LeaveMate.Middleware;
 using LeaveMate.Services;
+using LeaveMate.Services.Email;
 using LeaveMate.Services.Integration;
 using LeaveMate.Services.Validation;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +17,15 @@ builder.Services.AddSession(options =>
 });
 
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 // --- Data Access (Data Access Engineer / DBA tracks) -----------------------
 // SQLite is used by default so the app runs with zero external setup;
@@ -36,6 +43,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // --- Backend track: validation engine + workflow state machine -------------
 builder.Services.AddScoped<ILeaveValidationService, LeaveValidationService>();
 builder.Services.AddScoped<LeaveWorkflowService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailNotificationService, SmtpEmailNotificationService>();
 
 // --- Backend track: background coverage matrix refresh (async handlers) ---
 builder.Services.AddSingleton<CoverageCache>();
@@ -45,11 +55,39 @@ builder.Services.AddHostedService<CoverageRefreshService>();
 builder.Services.AddHttpClient<LeaveMateApiClient>(client =>
 {
     // Self-referencing base address: Razor Pages call this app's own API.
-    var appBaseUrl = builder.Configuration["AppBaseUrl"]
-        ?? builder.Configuration["urls"]
-        ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
-        ?? "http://localhost:5000";
-    client.BaseAddress = new Uri(appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]);
+    // Determine the listening port for local loopback (127.0.0.1).
+    // NEVER use '+' or '*' or '0.0.0.0' as the client host name because HttpClient cannot resolve them.
+    var appBaseUrl = builder.Configuration["AppBaseUrl"];
+    if (string.IsNullOrWhiteSpace(appBaseUrl))
+    {
+        var effectivePort = "5000";
+        if (!string.IsNullOrEmpty(port))
+        {
+            effectivePort = port;
+        }
+        else
+        {
+            var rawUrls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")
+                ?? builder.Configuration["urls"];
+            if (!string.IsNullOrEmpty(rawUrls))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(rawUrls, @":(\d+)");
+                if (match.Success)
+                {
+                    effectivePort = match.Groups[1].Value;
+                }
+            }
+        }
+        appBaseUrl = $"http://127.0.0.1:{effectivePort}";
+    }
+
+    var cleanUrl = appBaseUrl.Split(';', StringSplitOptions.RemoveEmptyEntries)[0]
+        .Replace("://+:", "://127.0.0.1:")
+        .Replace("://*:", "://127.0.0.1:")
+        .Replace("://0.0.0.0:", "://127.0.0.1:")
+        .TrimEnd('/') + "/";
+
+    client.BaseAddress = new Uri(cleanUrl);
 });
 
 var app = builder.Build();
@@ -83,5 +121,8 @@ app.MapPost("/Account/SignOut", (HttpContext context) =>
 
 app.MapControllers();
 app.MapRazorPages();
+app.MapControllerRoute(
+    name: "portal",
+    pattern: "Portal/{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

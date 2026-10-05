@@ -1,0 +1,128 @@
+@{
+    var currentUserName = Context.Session.GetActiveEmployeeName() ?? "Employee";
+    var currentUserRole = Context.Session.GetActiveEmployeeRole() ?? "Employee";
+    var roleLabel = currentUserRole == "HR" ? "HR Admin" : currentUserRole;
+    var userInitials = string.Concat(currentUserName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    var active = ViewData["ActiveNav"] as string ?? "dashboard";
+    var primaryAction = currentUserRole switch
+    {
+        "Manager" => (Text: "Team Approvals", Href: "/Approvals/Supervisor"),
+        "HR" => (Text: "HR Review", Href: "/Approvals/Hr"),
+        _ => (Text: "New Request", Href: "/Requests/Create")
+    };
+
+    var navItems = new List<(string Key, string Label, string Icon, string Href)>
+    {
+        ("dashboard", "Dashboard", "grid", "/Portal"),
+        ("requests", "Leave Requests", "inbox", "/Requests/MyRequests"),
+        ("calendar", "Team Calendar", "calendar", "/Calendar"),
+        ("accruals", "Accruals", "layers", "/Accruals"),
+        ("reports", "Reports", "bar-chart", "/Reports"),
+        ("settings", "Settings", "settings", "/Settings"),
+    };
+
+    if (currentUserRole == "Manager")
+    {
+        navItems.Insert(3, ("approvals", "Team Approvals", "check", "/Approvals/Supervisor"));
+    }
+    else if (currentUserRole == "HR")
+    {
+        navItems.Insert(3, ("approvals", "HR Review", "check", "/Approvals/Hr"));
+    }
+
+    string NavClass(string key) => key == active ? "nav-link is-active" : "nav-link";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] ?? "LeaveMate") · LeaveMate</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="~/portal/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="app-shell">
+
+        <!-- ===== Lateral navigation bar ===== -->
+        <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+            <a class="sidebar__brand" href="/Portal">
+                <span class="brand__mark" aria-hidden="true">◆</span>
+                <span class="brand__text">
+                    <strong>LeaveMate</strong>
+                    <small>Enterprise HR Portal</small>
+                </span>
+            </a>
+
+            <a class="btn btn--primary sidebar__cta" href="@primaryAction.Href">
+                <span aria-hidden="true">＋</span> @primaryAction.Text
+            </a>
+
+            <nav class="sidebar__nav">
+                @foreach (var item in navItems)
+                {
+                    <a class="@NavClass(item.Key)" href="@item.Href">
+                        <span class="nav-link__icon" data-icon="@item.Icon" aria-hidden="true"></span>
+                        <span class="nav-link__label">@item.Label</span>
+                    </a>
+                }
+            </nav>
+
+            <div class="sidebar__footer">
+                <a class="nav-link" href="/Help">
+                    <span class="nav-link__icon" data-icon="help" aria-hidden="true"></span>
+                    <span class="nav-link__label">Help</span>
+                </a>
+                <form method="post" action="/Account/SignOut">
+                    <button class="nav-link nav-link--button" type="submit">
+                        <span class="nav-link__icon" data-icon="logout" aria-hidden="true"></span>
+                        <span class="nav-link__label">Sign Out</span>
+                    </button>
+                </form>
+                <div class="user-chip">
+                    <span class="avatar" aria-hidden="true">@userInitials</span>
+                    <span class="user-chip__meta">
+                        <strong>@currentUserName</strong>
+                        <small>@roleLabel</small>
+                    </span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== Top header ===== -->
+        <header class="topbar">
+            <button class="topbar__toggle" id="sidebarToggle" aria-label="Toggle navigation" aria-controls="sidebar">
+                <span></span><span></span><span></span>
+            </button>
+
+            <div class="topbar__search">
+                <span class="topbar__search-icon" aria-hidden="true">⌕</span>
+                <input type="search" placeholder="Search requests, people…" aria-label="Search" />
+            </div>
+
+            <div class="topbar__actions">
+                <a class="icon-btn" href="/Notifications" aria-label="Notifications" title="Notifications">
+                    <span aria-hidden="true">🔔</span>
+                </a>
+                <button class="icon-btn" aria-label="History">↺</button>
+                <span class="avatar avatar--sm" aria-hidden="true">@userInitials</span>
+            </div>
+        </header>
+
+        <!-- ===== Main content outlet ===== -->
+        <main class="main" id="main" role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Backdrop for the mobile off-canvas sidebar -->
+    <div class="scrim" id="scrim" hidden></div>
+
+    <script src="~/portal/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -7,6 +7,7 @@ namespace LeaveMate.Enums
         Maternity = 2,
         Paternity = 3,
         Unpaid = 4,
-        Compassionate = 5
+        Compassionate = 5,
+        Personal = 6
     }
 }

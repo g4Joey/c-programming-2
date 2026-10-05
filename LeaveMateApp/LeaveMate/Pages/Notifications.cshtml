@@ -1,0 +1,58 @@
+@page
+@model LeaveMate.Pages.NotificationsModel
+@{
+    ViewData["Title"] = Model.Heading;
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">@Model.Heading</h1>
+        <p class="subtle">Pending leave activity for your account.</p>
+    </header>
+
+    <section class="card">
+        @if (!Model.Items.Any())
+        {
+            <p class="empty-state">You're all caught up.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Requester</th>
+                            <th>Leave type</th>
+                            <th>Start date</th>
+                            <th>End date</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Next action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.Type</td>
+                                <td>@item.StartDate.ToString("MMM d, yyyy")</td>
+                                <td>@item.EndDate.ToString("MMM d, yyyy")</td>
+                                <td>@item.DurationInDays</td>
+                                <td>
+                                    <span class="badge @NotificationsModel.GetStatusBadgeClass(item.Status)">
+                                        @NotificationsModel.GetStatusLabel(item.Status)
+                                    </span>
+                                </td>
+                                <td>@NotificationsModel.GetNextActionLabel(item.Status)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        <div class="section-heading notification-action">
+            <a class="btn btn--primary" href="@Model.QueueUrl">@Model.QueueLabel</a>
+        </div>
+    </section>
+</div>

@@ -32,7 +32,9 @@ namespace LeaveMate.Controllers
                     e.Email,
                     e.SupervisorId,
                     e.IsHrAdministrator,
-                    e.AnnualLeaveBalanceDays
+                    e.AnnualLeaveBalanceDays,
+                    e.SickLeaveBalanceDays,
+                    e.PersonalLeaveBalanceDays
                 })
                 .ToListAsync();
 

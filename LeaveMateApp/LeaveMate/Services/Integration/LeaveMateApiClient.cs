@@ -3,7 +3,15 @@ using LeaveMate.DTOs;
 
 namespace LeaveMate.Services.Integration
 {
-    public record EmployeeSummary(int Id, string FullName, string Email, int? SupervisorId, bool IsHrAdministrator, int AnnualLeaveBalanceDays);
+    public record EmployeeSummary(
+        int Id,
+        string FullName,
+        string Email,
+        int? SupervisorId,
+        bool IsHrAdministrator,
+        int AnnualLeaveBalanceDays,
+        int SickLeaveBalanceDays,
+        int PersonalLeaveBalanceDays);
     public record CoverageResponse(DateTime LastRefreshedUtc, List<CoverageDay> Days);
 
     /// <summary>

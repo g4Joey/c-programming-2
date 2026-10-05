@@ -16,9 +16,18 @@ namespace LeaveMate.Data
 
         public DbSet<Employee> Employees => Set<Employee>();
         public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+        public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Employee>()
+                .Property(e => e.SickLeaveBalanceDays)
+                .HasDefaultValue(5);
+
+            modelBuilder.Entity<Employee>()
+                .Property(e => e.PersonalLeaveBalanceDays)
+                .HasDefaultValue(2);
+
             modelBuilder.Entity<Employee>()
                 .HasOne(e => e.Supervisor)
                 .WithMany()
@@ -38,6 +47,32 @@ namespace LeaveMate.Data
             modelBuilder.Entity<LeaveRequest>()
                 .Property(r => r.Status)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.Property(log => log.Action)
+                    .HasMaxLength(64)
+                    .IsRequired();
+                entity.Property(log => log.PreviousStatus)
+                    .HasConversion<string>()
+                    .HasMaxLength(64);
+                entity.Property(log => log.NewStatus)
+                    .HasConversion<string>()
+                    .HasMaxLength(64);
+
+                entity.HasOne(log => log.LeaveRequest)
+                    .WithMany()
+                    .HasForeignKey(log => log.LeaveRequestId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne<Employee>()
+                    .WithMany()
+                    .HasForeignKey(log => log.ActorEmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(log => new { log.LeaveRequestId, log.OccurredAtUtc });
+                entity.HasIndex(log => log.ActorEmployeeId);
+            });
         }
     }
 }

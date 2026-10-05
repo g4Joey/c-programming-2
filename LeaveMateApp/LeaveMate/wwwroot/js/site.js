@@ -8,23 +8,45 @@ function badgeClassFor(status) {
     }
 }
 
-const appShell = document.querySelector(".app-shell");
-const navToggle = document.querySelector(".nav-toggle");
+const sidebar = document.getElementById("primary-nav");
+const scrim = document.getElementById("scrim");
+const navToggle = document.getElementById("sidebarToggle");
 
-if (appShell && navToggle) {
-    const collapsedStorageKey = "leavemate-sidebar-collapsed";
-    const setNavCollapsed = (collapsed) => {
-        appShell.classList.toggle("app-shell--nav-collapsed", collapsed);
-        navToggle.setAttribute("aria-expanded", String(!collapsed));
-        navToggle.setAttribute("aria-label", collapsed ? "Open sidebar" : "Collapse sidebar");
-        navToggle.setAttribute("title", collapsed ? "Open sidebar" : "Collapse sidebar");
-        navToggle.textContent = collapsed ? "Open sidebar" : "Collapse sidebar";
-    };
-
-    setNavCollapsed(localStorage.getItem(collapsedStorageKey) === "true");
-    navToggle.addEventListener("click", () => {
-        const collapsed = !appShell.classList.contains("app-shell--nav-collapsed");
-        localStorage.setItem(collapsedStorageKey, String(collapsed));
-        setNavCollapsed(collapsed);
-    });
+function closeSidebar() {
+    sidebar?.classList.remove("is-open");
+    if (scrim) scrim.hidden = true;
+    navToggle?.setAttribute("aria-expanded", "false");
+    navToggle?.setAttribute("aria-label", "Open navigation");
 }
+
+function toggleSidebar() {
+    const isOpen = sidebar?.classList.toggle("is-open") ?? false;
+    if (scrim) scrim.hidden = !isOpen;
+    navToggle?.setAttribute("aria-expanded", String(isOpen));
+    navToggle?.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation");
+}
+
+navToggle?.addEventListener("click", toggleSidebar);
+scrim?.addEventListener("click", closeSidebar);
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeSidebar();
+});
+
+document.querySelector("[data-refresh]")?.addEventListener("click", () => window.location.reload());
+
+const preferenceClasses = { compact: "is-compact", contrast: "is-high-contrast" };
+const savedMessage = document.getElementById("settingsSaved");
+
+document.querySelectorAll("[data-preference]").forEach(input => {
+    const preference = input.dataset.preference;
+    const className = preferenceClasses[preference];
+    const storageKey = `leavemate-preference-${preference}`;
+    input.checked = localStorage.getItem(storageKey) === "true";
+    if (className) document.body.classList.toggle(className, input.checked);
+
+    input.addEventListener("change", () => {
+        localStorage.setItem(storageKey, String(input.checked));
+        if (className) document.body.classList.toggle(className, input.checked);
+        if (savedMessage) savedMessage.textContent = "Preference saved in this browser.";
+    });
+});

@@ -1,0 +1,16 @@
+@model LeaveMate.Web.Models.LeaveStatus
+@*
+    Reusable status badge — Pending (amber), Approved (green), Rejected (red).
+    Usage:  <partial name="_StatusBadge" model="LeaveStatus.Pending" />
+*@
+@{
+    var (cls, label) = Model switch
+    {
+        LeaveStatus.Approved => ("badge--approved", "Approved"),
+        LeaveStatus.Rejected => ("badge--rejected", "Rejected"),
+        _ => ("badge--pending", "Pending"),
+    };
+}
+<span class="badge @cls">
+    <span class="badge__dot" aria-hidden="true"></span>@label
+</span>

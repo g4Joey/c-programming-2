@@ -4,66 +4,113 @@
     var currentUserRole = Context.Session.GetActiveEmployeeRole() ?? "Employee";
     var isSignedIn = Context.Session.GetActiveEmployeeId().HasValue;
     var isLoginPage = Context.Request.Path.StartsWithSegments("/Account/Login", StringComparison.OrdinalIgnoreCase);
+    var roleLabel = currentUserRole == "HR" ? "HR Admin" : currentUserRole;
+    var userInitials = string.Concat(currentUserName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    var path = Context.Request.Path.Value ?? "/";
+    var activeNav = ViewData["ActiveNav"] as string ??
+        (path == "/" ? "dashboard" : path.StartsWith("/Requests") ? "requests" : path.StartsWith("/Calendar") ? "calendar" : path == "/Accruals" ? "accruals" : path == "/Reports" ? "reports" : path == "/Settings" ? "settings" : "");
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] - LeaveMate</title>
+    <title>@ViewData["Title"] · LeaveMate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    <div class="app-shell @(isLoginPage ? "app-shell--sign-in" : string.Empty)">
-        @if (!isLoginPage)
-        {
-        <nav class="nav-rail" id="primary-nav" aria-label="Primary navigation">
-            <div class="nav-rail__brand">LeaveMate</div>
-            @if (isSignedIn)
-            {
-                <div class="nav-rail__user">
-                    <strong>@currentUserName</strong>
-                    <span>@currentUserRole</span>
-                </div>
-                <a class="nav-rail__link" href="/">Dashboard</a>
+    @if (isLoginPage)
+    {
+        <main class="app-content app-content--sign-in" role="main">
+            @RenderBody()
+        </main>
+    }
+    else if (isSignedIn)
+    {
+        <div class="app-shell">
+            <aside class="nav-rail" id="primary-nav" aria-label="Primary navigation">
+                <a class="nav-rail__brand" href="/" aria-label="LeaveMate dashboard">
+                    <span class="brand__mark" aria-hidden="true">◆</span>
+                    <span class="brand__text"><strong>LeaveMate</strong><small>Enterprise HR Portal</small></span>
+                </a>
+
                 @if (currentUserRole == "Employee")
                 {
-                    <a class="nav-rail__link" href="/Requests/Create">Request Leave</a>
-                    <a class="nav-rail__link" href="/Requests/MyRequests">My Requests</a>
-                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                    <a class="btn btn--primary sidebar__cta" href="/Requests/Create"><span aria-hidden="true">＋</span> New Request</a>
                 }
                 else if (currentUserRole == "Manager")
                 {
-                    <a class="nav-rail__link" href="/Approvals/Supervisor">Team Approvals</a>
-                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                    <a class="btn btn--primary sidebar__cta" href="/Approvals/Supervisor">Team Approvals</a>
                 }
-                else if (currentUserRole == "HR")
+                else
                 {
-                    <a class="nav-rail__link" href="/Approvals/Hr">HR Review</a>
-                    <a class="nav-rail__link" href="/Calendar">Coverage Calendar</a>
+                    <a class="btn btn--primary sidebar__cta" href="/Approvals/Hr">HR Review</a>
                 }
-                <a class="nav-rail__link" href="/Account/Login">Switch User</a>
-                <form method="post" action="/Account/SignOut">
-                    <button type="submit" class="btn btn--secondary" style="width:100%; margin-top:0.75rem;">Sign Out</button>
-                </form>
-            }
-            else
-            {
-                <a class="nav-rail__link" href="/Account/Login">Sign In</a>
-            }
-        </nav>
-        }
 
-        <main class="app-content @(isLoginPage ? "app-content--sign-in" : string.Empty)">
-            @if (!isLoginPage)
-            {
-            <div class="app-content__toolbar">
-                <button type="button" class="btn btn--secondary nav-toggle" aria-controls="primary-nav" aria-expanded="true" aria-label="Collapse sidebar" title="Collapse sidebar">Collapse sidebar</button>
-            </div>
-            }
-            @RenderBody()
-        </main>
-    </div>
+                <nav class="sidebar__nav">
+                    <a class="nav-rail__link @(activeNav == "dashboard" ? "is-active" : "")" href="/">
+                        <span class="nav-link__icon" aria-hidden="true">▦</span><span>Dashboard</span>
+                    </a>
+                    <a class="nav-rail__link" href="/Portal">
+                        <span class="nav-link__icon" aria-hidden="true">✦</span><span>Modern dashboard</span>
+                    </a>
+                    <a class="nav-rail__link @(activeNav == "requests" ? "is-active" : "")" href="/Requests/MyRequests">
+                        <span class="nav-link__icon" aria-hidden="true">▤</span><span>Leave Requests</span>
+                    </a>
+                    <a class="nav-rail__link @(activeNav == "calendar" ? "is-active" : "")" href="/Calendar">
+                        <span class="nav-link__icon" aria-hidden="true">▣</span><span>Team Calendar</span>
+                    </a>
+                    @if (currentUserRole == "Manager")
+                    {
+                        <a class="nav-rail__link" href="/Approvals/Supervisor"><span class="nav-link__icon" aria-hidden="true">✓</span><span>Team Approvals</span></a>
+                    }
+                    else if (currentUserRole == "HR")
+                    {
+                        <a class="nav-rail__link" href="/Approvals/Hr"><span class="nav-link__icon" aria-hidden="true">✓</span><span>HR Review</span></a>
+                    }
+                    <a class="nav-rail__link @(activeNav == "accruals" ? "is-active" : "")" href="/Accruals"><span class="nav-link__icon" aria-hidden="true">▥</span><span>Accruals</span></a>
+                    <a class="nav-rail__link @(activeNav == "reports" ? "is-active" : "")" href="/Reports"><span class="nav-link__icon" aria-hidden="true">▧</span><span>Reports</span></a>
+                    <a class="nav-rail__link @(activeNav == "settings" ? "is-active" : "")" href="/Settings"><span class="nav-link__icon" aria-hidden="true">⚙</span><span>Settings</span></a>
+                </nav>
+
+                <div class="sidebar__footer">
+                    <a class="nav-rail__link" href="/Help"><span class="nav-link__icon" aria-hidden="true">?</span><span>Help</span></a>
+                    <form method="post" action="/Account/SignOut">
+                        <button type="submit" class="nav-rail__link nav-rail__button"><span class="nav-link__icon" aria-hidden="true">⇥</span><span>Sign Out</span></button>
+                    </form>
+                    <div class="user-chip">
+                        <span class="avatar" aria-hidden="true">@userInitials</span>
+                        <span class="user-chip__meta"><strong>@currentUserName</strong><small>@roleLabel</small></span>
+                    </div>
+                </div>
+            </aside>
+
+            <header class="topbar">
+                <button type="button" class="nav-toggle" id="sidebarToggle" aria-label="Open navigation" aria-controls="primary-nav" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+                <label class="topbar__search">
+                    <span aria-hidden="true">⌕</span>
+                    <input type="search" placeholder="Search requests, people..." aria-label="Search requests and people" />
+                </label>
+                <div class="topbar__actions">
+                    <a class="icon-btn" href="/Notifications" aria-label="Notifications" title="Notifications">🔔</a>
+                    <button type="button" class="icon-btn" data-refresh aria-label="Refresh page" title="Refresh">↻</button>
+                    <span class="avatar avatar--sm" aria-hidden="true">@userInitials</span>
+                </div>
+            </header>
+
+            <main class="app-content" id="main" role="main">@RenderBody()</main>
+        </div>
+        <div class="scrim" id="scrim" hidden></div>
+    }
+    else
+    {
+        <main class="auth-main" role="main">@RenderBody()</main>
+    }
 
     <script src="~/js/site.js"></script>
     @await RenderSectionAsync("Scripts", required: false)

@@ -1,45 +1,104 @@
 @page
 @model IndexModel
 @using LeaveMate.Services
+@using LeaveMate.Enums
 @{
     ViewData["Title"] = "Dashboard";
+    ViewData["ActiveNav"] = "dashboard";
+    var firstName = Model.CurrentUserName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? Model.CurrentUserName;
+    var greeting = DateTime.Now.Hour switch
+    {
+        >= 5 and < 12 => "Good morning",
+        >= 12 and < 17 => "Good afternoon",
+        _ => "Good evening"
+    };
+    var pendingRequest = Model.RecentRequests.FirstOrDefault(request =>
+        request.Status is LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval);
 }
 
-<h1>@Model.DashboardHeading</h1>
-<p class="card">
-    Welcome back, @Model.CurrentUserName. @Model.DashboardDescription
-</p>
-
-<div class="card">
-    <h2>@Model.CurrentUserRole actions</h2>
-    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-        <a class="btn" href="@Model.PrimaryActionUrl">@Model.PrimaryActionText</a>
-    </div>
-</div>
-
-<div class="card">
-    <h2>@(Model.CurrentUserRole == "Employee" ? "My requests" : "Requests needing review")</h2>
-    @if (!Model.RecentRequests.Any())
+<div class="page">
+    @if (pendingRequest is not null)
     {
-        <p>No leave requests yet.</p>
+        var approvalTier = pendingRequest.Status == LeaveStatus.PendingSupervisorApproval
+            ? "supervisor" : "HR";
+        <div class="alert alert--info" role="status">
+            <span class="alert__icon" aria-hidden="true">i</span>
+            <div class="alert__body">
+                <strong class="alert__title">Heads up:</strong>
+                <span class="alert__message">Your @pendingRequest.Type leave request for @pendingRequest.StartDate.ToString("MMM d")–@pendingRequest.EndDate.ToString("MMM d") is awaiting @approvalTier approval.</span>
+            </div>
+        </div>
     }
-    else
-    {
-        <table class="data-table">
-            <thead>
-                <tr><th>Employee</th><th>Type</th><th>Dates</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model.RecentRequests)
+
+    <header class="page-head">
+        <h1 class="display">@greeting, @firstName</h1>
+        <p class="subtle">Here is your leave overview for @DateTime.Now.Year.</p>
+    </header>
+
+    <section class="stat-grid" aria-label="Leave balances">
+        <div class="card card--accent stat">
+            <span class="label-caps">Annual Leave</span>
+            <span class="stat__value">@(Model.AnnualLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
+        </div>
+        <div class="card card--accent stat">
+            <span class="label-caps">Sick Leave</span>
+            <span class="stat__value">@(Model.SickLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
+        </div>
+        <div class="card card--accent stat">
+            <span class="label-caps">Personal Days</span>
+            <span class="stat__value">@(Model.PersonalLeaveBalanceDays?.ToString() ?? "Unavailable") <span>days left</span></span>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="section-heading">
+            <h2 class="headline">@(Model.CurrentUserRole == "Employee" ? "My Requests" : "Requests Needing Review")</h2>
+            <a class="btn btn--primary" href="@Model.PrimaryActionUrl">
+                @if (Model.CurrentUserRole == "Employee")
                 {
-                    <tr>
-                        <td>@r.EmployeeName</td>
-                        <td>@r.Type</td>
-                        <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString() (@r.DurationInDays d)</td>
-                        <td><span class="badge badge--pending">@r.Status</span></td>
-                    </tr>
+                    <span aria-hidden="true">＋</span><span>New Request</span>
                 }
-            </tbody>
-        </table>
-    }
+                else
+                {
+                    @Model.PrimaryActionText
+                }
+            </a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr><th>Type</th><th>Dates</th><th>Days</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentRequests.Any())
+                    {
+                        <tr><td colspan="4" class="empty-state">No leave requests to show.</td></tr>
+                    }
+                    @foreach (var request in Model.RecentRequests)
+                    {
+                        var badgeClass = request.Status switch
+                        {
+                            LeaveStatus.Approved => "badge--approved",
+                            LeaveStatus.Rejected => "badge--rejected",
+                            LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval => "badge--pending",
+                            _ => "badge--other"
+                        };
+                        var statusLabel = request.Status switch
+                        {
+                            LeaveStatus.PendingSupervisorApproval => "Pending supervisor",
+                            LeaveStatus.PendingHrApproval => "Pending HR",
+                            _ => request.Status.ToString()
+                        };
+                        <tr>
+                            <td>@request.Type</td>
+                            <td class="subtle">@request.StartDate.ToString("MMM d")–@request.EndDate.ToString("MMM d, yyyy")</td>
+                            <td class="data-num">@request.DurationInDays</td>
+                            <td><span class="badge @badgeClass">@statusLabel</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>

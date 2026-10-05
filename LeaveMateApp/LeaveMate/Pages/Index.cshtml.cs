@@ -21,6 +21,9 @@ namespace LeaveMate.Pages
         public string DashboardDescription { get; private set; } = string.Empty;
         public string PrimaryActionText { get; private set; } = "Request leave";
         public string PrimaryActionUrl { get; private set; } = "/Requests/Create";
+        public int? AnnualLeaveBalanceDays { get; private set; }
+        public int? SickLeaveBalanceDays { get; private set; }
+        public int? PersonalLeaveBalanceDays { get; private set; }
 
         public async Task OnGetAsync()
         {
@@ -33,6 +36,17 @@ namespace LeaveMate.Pages
 
             CurrentUserName = HttpContext.Session.GetActiveEmployeeName() ?? CurrentUserName;
             CurrentUserRole = HttpContext.Session.GetActiveEmployeeRole() ?? CurrentUserRole;
+            var employees = await _api.GetEmployeesAsync();
+            var activeEmployee = employees.SingleOrDefault(employee => employee.Id == activeEmployeeId.Value);
+            if (activeEmployee is null)
+            {
+                throw new InvalidOperationException(
+                    $"The active employee with id {activeEmployeeId.Value} could not be found.");
+            }
+
+            AnnualLeaveBalanceDays = activeEmployee.AnnualLeaveBalanceDays;
+            SickLeaveBalanceDays = activeEmployee.SickLeaveBalanceDays;
+            PersonalLeaveBalanceDays = activeEmployee.PersonalLeaveBalanceDays;
 
             switch (CurrentUserRole)
             {
@@ -48,7 +62,6 @@ namespace LeaveMate.Pages
                     DashboardDescription = "Review leave requests submitted by your direct reports.";
                     PrimaryActionText = "Open team queue";
                     PrimaryActionUrl = "/Approvals/Supervisor";
-                    var employees = await _api.GetEmployeesAsync();
                     var reportIds = employees
                         .Where(employee => employee.SupervisorId == activeEmployeeId)
                         .Select(employee => employee.Id)

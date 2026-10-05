@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LeaveMate.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5d1cf8193dca325d8e2bdcd86010afca74a2fad9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cc00d39a8be3684486d7768bdca64ac233bbe919")]
 [assembly: System.Reflection.AssemblyProductAttribute("LeaveMate.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LeaveMate.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

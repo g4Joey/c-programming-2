@@ -54,10 +54,31 @@ namespace LeaveMate.Services
             EnsureStatus(request, LeaveStatus.PendingHrApproval);
             await EnsureIsHrAdminAsync(decidedByEmployeeId);
 
+            Employee? employee = null;
+            if (approve && UsesTrackedBalance(request.Type))
+            {
+                employee = await _db.Employees.FirstOrDefaultAsync(e => e.Id == request.EmployeeId);
+                if (employee is null)
+                {
+                    throw new WorkflowException("The employee associated with this request could not be found.");
+                }
+
+                if (request.DurationInDays > GetBalance(employee, request.Type))
+                {
+                    throw new WorkflowException(
+                        $"The employee no longer has enough {request.Type.ToString().ToLowerInvariant()} leave balance to approve this request.");
+                }
+            }
+
             request.HrComment = comment;
             request.LastActionedByEmployeeId = decidedByEmployeeId;
             request.Status = approve ? LeaveStatus.Approved : LeaveStatus.Rejected;
             request.DecidedAtUtc = DateTime.UtcNow;
+
+            if (employee is not null)
+            {
+                SetBalance(employee, request.Type, GetBalance(employee, request.Type) - request.DurationInDays);
+            }
         }
 
         public void Recall(LeaveRequest request, int requestedByEmployeeId)
@@ -106,5 +127,35 @@ namespace LeaveMate.Services
     }
 }
 
+    public static bool UsesTrackedBalance(LeaveType type) =>
+        type is LeaveType.Annual or LeaveType.Sick or LeaveType.Personal;
+
+    public static int GetBalance(Employee employee, LeaveType type) =>
+        type switch
+        {
+            LeaveType.Annual => employee.AnnualLeaveBalanceDays,
+            LeaveType.Sick => employee.SickLeaveBalanceDays,
+            LeaveType.Personal => employee.PersonalLeaveBalanceDays,
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, "This leave type has no tracked balance.")
+        };
+
+    private static void SetBalance(Employee employee, LeaveType type, int balance)
+    {
+        switch (type)
+        {
+            case LeaveType.Annual:
+                employee.AnnualLeaveBalanceDays = balance;
+                break;
+            case LeaveType.Sick:
+                employee.SickLeaveBalanceDays = balance;
+                break;
+            case LeaveType.Personal:
+                employee.PersonalLeaveBalanceDays = balance;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(type), type, "This leave type has no tracked balance.");
+        }
     }
+
+}
 }

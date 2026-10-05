@@ -1,42 +1,67 @@
 @page
 @model LeaveMate.Pages.Requests.MyRequestsModel
 @{
-    ViewData["Title"] = "My Requests";
+    ViewData["Title"] = Model.Heading;
+    ViewData["ActiveNav"] = "requests";
 }
 
-<h1>My Requests</h1>
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">@Model.Heading</h1>
+        <p class="subtle">Review leave requests and their approval status.</p>
+    </header>
 
-<div class="card">
-    @if (!Model.Requests.Any())
-    {
-        <p>You have no leave requests yet.</p>
-    }
-    else
-    {
-        <table class="data-table">
-            <thead>
-                <tr><th>Type</th><th>Dates</th><th>Status</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model.Requests)
-                {
-                    <tr>
-                        <td>@r.Type</td>
-                        <td>@r.StartDate.ToShortDateString() - @r.EndDate.ToShortDateString()</td>
-                        <td><span class="badge badge--pending">@r.Status</span></td>
-                        <td>
-                            @if (r.Status is Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval)
+    <section class="card">
+        @if (!Model.Requests.Any())
+        {
+            <p class="empty-state">No leave requests to show.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            @if (Model.ShowEmployeeColumn)
                             {
-                                <form method="post" asp-page-handler="Recall">
-                                    <input type="hidden" name="requestId" value="@r.Id" />
-                                    <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
-                                    <button type="submit" class="btn btn--secondary">Recall</button>
-                                </form>
+                                <th>Employee</th>
                             }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
+                            <th>Type</th><th>Dates</th><th>Days</th><th>Status</th><th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model.Requests)
+                        {
+                            var badgeClass = request.Status switch
+                            {
+                                Enums.LeaveStatus.Approved => "badge--approved",
+                                Enums.LeaveStatus.Rejected => "badge--rejected",
+                                Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval => "badge--pending",
+                                _ => "badge--other"
+                            };
+                            <tr>
+                                @if (Model.ShowEmployeeColumn)
+                                {
+                                    <td>@request.EmployeeName</td>
+                                }
+                                <td>@request.Type</td>
+                                <td>@request.StartDate.ToString("MMM d")–@request.EndDate.ToString("MMM d, yyyy")</td>
+                                <td>@request.DurationInDays</td>
+                                <td><span class="badge @badgeClass">@request.Status</span></td>
+                                <td>
+                                    @if (Model.CanRecallRequests && request.Status is Enums.LeaveStatus.PendingSupervisorApproval or Enums.LeaveStatus.PendingHrApproval)
+                                    {
+                                        <form method="post" asp-page-handler="Recall">
+                                            <input type="hidden" name="requestId" value="@request.Id" />
+                                            <button type="submit" class="btn btn--secondary">Recall</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
 </div>

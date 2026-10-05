@@ -1,0 +1,66 @@
+@page
+@model LeaveMate.Pages.ReportsModel
+@{
+    ViewData["Title"] = Model.Heading;
+    ViewData["ActiveNav"] = "reports";
+}
+
+<div class="page">
+    <header class="page-head">
+        <h1 class="display">@Model.Heading</h1>
+        <p class="subtle">A summary of leave requests visible to your role.</p>
+    </header>
+
+    <section class="stat-grid report-grid" aria-label="Request totals">
+        <div class="card stat"><span class="label-caps">Total Requests</span><span class="stat__value">@Model.Requests.Count</span></div>
+        <div class="card stat"><span class="label-caps">Pending</span><span class="stat__value">@Model.PendingCount</span></div>
+        <div class="card stat"><span class="label-caps">Approved</span><span class="stat__value">@Model.ApprovedCount</span></div>
+        <div class="card stat"><span class="label-caps">Rejected</span><span class="stat__value">@Model.RejectedCount</span></div>
+    </section>
+
+    <section class="card">
+        <h2 class="headline section-heading">Request history</h2>
+        @if (!Model.Requests.Any())
+        {
+            <p class="empty-state">No requests are available for this report.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            @if (Model.ShowEmployeeColumn)
+                            {
+                                <th>Employee</th>
+                            }
+                            <th>Type</th><th>Dates</th><th>Days</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in Model.Requests)
+                        {
+                            var badgeClass = request.Status switch
+                            {
+                                LeaveStatus.Approved => "badge--approved",
+                                LeaveStatus.Rejected => "badge--rejected",
+                                LeaveStatus.PendingSupervisorApproval or LeaveStatus.PendingHrApproval => "badge--pending",
+                                _ => "badge--other"
+                            };
+                            <tr>
+                                @if (Model.ShowEmployeeColumn)
+                                {
+                                    <td>@request.EmployeeName</td>
+                                }
+                                <td>@request.Type</td>
+                                <td>@request.StartDate.ToString("MMM d")–@request.EndDate.ToString("MMM d, yyyy")</td>
+                                <td>@request.DurationInDays</td>
+                                <td><span class="badge @badgeClass">@request.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
