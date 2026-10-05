@@ -3,6 +3,7 @@
     var currentUserName = Context.Session.GetActiveEmployeeName() ?? "Jane Mensah";
     var currentUserRole = Context.Session.GetActiveEmployeeRole() ?? "Employee";
     var isSignedIn = Context.Session.GetActiveEmployeeId().HasValue;
+    var isLoginPage = Context.Request.Path.StartsWithSegments("/Account/Login", StringComparison.OrdinalIgnoreCase);
     var roleLabel = currentUserRole == "HR" ? "HR Admin" : currentUserRole;
     var userInitials = string.Concat(currentUserName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(part => char.ToUpperInvariant(part[0])));
     var path = Context.Request.Path.Value ?? "/";
@@ -21,7 +22,13 @@
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-    @if (isSignedIn)
+    @if (isLoginPage)
+    {
+        <main class="app-content app-content--sign-in" role="main">
+            @RenderBody()
+        </main>
+    }
+    else if (isSignedIn)
     {
         <div class="app-shell">
             <aside class="nav-rail" id="primary-nav" aria-label="Primary navigation">

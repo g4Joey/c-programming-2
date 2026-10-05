@@ -4,29 +4,66 @@
     ViewData["Title"] = "Sign in";
 }
 
-<h1>Sign in</h1>
+<div class="sign-in-page">
+    <section class="sign-in-intro" aria-labelledby="sign-in-heading">
+        <a class="sign-in-brand" href="/" aria-label="LeaveMate home">
+            <span class="sign-in-brand__mark" aria-hidden="true">L</span>
+            <span>LeaveMate</span>
+        </a>
 
-<div class="card" style="max-width: 600px;">
-    <form method="post" class="form-stack" novalidate>
-        @if (!ModelState.IsValid && ModelState[string.Empty]?.Errors.Count > 0)
-        {
-            <div class="alert-error" role="alert">
-                @ModelState[string.Empty]!.Errors[0].ErrorMessage
+        <div class="sign-in-intro__content">
+            <span class="sign-in-eyebrow">LEAVE MANAGEMENT, MADE SIMPLE</span>
+            <h1 id="sign-in-heading">Make time for what matters.</h1>
+            <p>Plan time away with clarity. Keep requests, approvals, and team coverage together in one calm, connected workspace.</p>
+
+            <div class="sign-in-highlights" aria-label="LeaveMate features">
+                <div class="sign-in-highlight">
+                    <span class="sign-in-highlight__icon" aria-hidden="true">01</span>
+                    <span>Simple leave requests</span>
+                </div>
+                <div class="sign-in-highlight">
+                    <span class="sign-in-highlight__icon" aria-hidden="true">02</span>
+                    <span>Clear team coverage</span>
+                </div>
             </div>
-        }
-
-        <div class="form-field">
-            <label asp-for="Email">Email</label>
-            <input asp-for="Email" type="email" autocomplete="username" placeholder="you@company.com" autofocus />
-            <span asp-validation-for="Email" class="field-error"></span>
         </div>
 
-        <div class="form-field">
-            <label asp-for="Password">Password</label>
-            <input asp-for="Password" type="password" autocomplete="current-password" />
-            <span asp-validation-for="Password" class="field-error"></span>
-        </div>
+        <span class="sign-in-intro__footer">A little more balance, every day.</span>
+        <span class="sign-in-decoration sign-in-decoration--ring" aria-hidden="true"></span>
+        <span class="sign-in-decoration sign-in-decoration--dot" aria-hidden="true"></span>
+    </section>
 
-        <button type="submit" class="btn">Sign in</button>
-    </form>
+    <section class="sign-in-panel" aria-labelledby="sign-in-form-heading">
+        <div class="sign-in-card">
+            <span class="sign-in-card__eyebrow">YOUR WORKSPACE AWAITS</span>
+            <h2 id="sign-in-form-heading">Welcome back</h2>
+            <p class="sign-in-card__description">Sign in to continue to your LeaveMate account.</p>
+
+            <form method="post" class="sign-in-form" novalidate>
+                @if (!ModelState.IsValid && ModelState[string.Empty]?.Errors.Count > 0)
+                {
+                    <div class="alert-error" role="alert">
+                        @ModelState[string.Empty]!.Errors[0].ErrorMessage
+                    </div>
+                }
+
+                <div class="form-field">
+                    <label asp-for="Email">Work email</label>
+                    <input asp-for="Email" type="email" autocomplete="username" placeholder="you@company.com" autofocus />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" type="password" autocomplete="current-password" placeholder="Enter your password" />
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <button type="submit" class="btn sign-in-submit">Sign in <span aria-hidden="true">→</span></button>
+            </form>
+
+            <p class="sign-in-card__note"><span aria-hidden="true">✦</span> Your time away, thoughtfully organized.</p>
+        </div>
+        <span class="sign-in-panel__copyright">© @DateTime.Now.Year LeaveMate</span>
+    </section>
 </div>
