@@ -3,7 +3,14 @@ using LeaveMate.Enums;
 using LeaveMate.Exceptions;
 using LeaveMate.Models;
 using LeaveMate.Services;
+using LeaveMate.Services.Email;
+using LeaveMate.Services.Validation;
+using LeaveMate.Controllers;
+using LeaveMate.DTOs;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace LeaveMate.Tests
@@ -232,6 +239,230 @@ namespace LeaveMate.Tests
             var request = new LeaveRequest { EmployeeId = employee.Id, Status = LeaveStatus.Approved };
 
             Assert.Throws<WorkflowException>(() => workflow.Recall(request, employee.Id));
+        }
+    }
+
+    public class LeaveRequestsControllerAuditTests
+        {
+            private static ApplicationDbContext NewInMemoryDb(string name)
+            {
+                var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                    .UseInMemoryDatabase(name)
+                    .Options;
+                return new ApplicationDbContext(options);
+            }
+
+            private static (Employee supervisor, Employee employee, Employee hr) SeedOrg(ApplicationDbContext db)
+            {
+                var hr = new Employee { FullName = "HR Admin", Email = "hr@audit.test", IsHrAdministrator = true };
+                var supervisor = new Employee { FullName = "Supervisor", Email = "supervisor@audit.test" };
+                db.Employees.AddRange(hr, supervisor);
+                db.SaveChanges();
+
+                var employee = new Employee
+                {
+                    FullName = "Employee",
+                    Email = "employee@audit.test",
+                    SupervisorId = supervisor.Id
+                };
+                db.Employees.Add(employee);
+                db.SaveChanges();
+
+                return (supervisor, employee, hr);
+            }
+
+            private static LeaveRequestsController CreateController(ApplicationDbContext db) =>
+                new(
+                    db,
+                    new LeaveValidationService(db),
+                    new LeaveWorkflowService(db),
+                    new AuditLogService(db),
+                    new DisabledEmailNotificationService(),
+                    NullLogger<LeaveRequestsController>.Instance);
+
+            private sealed class DisabledEmailNotificationService : IEmailNotificationService
+            {
+                public Task<EmailDeliveryResult> SendAsync(
+                    LeaveActionNotification notification,
+                    CancellationToken cancellationToken = default) =>
+                    Task.FromResult(EmailDeliveryResult.Skip());
+            }
+
+            private static LeaveRequest AddRequest(
+                ApplicationDbContext db,
+                Employee employee,
+                LeaveStatus status)
+            {
+                var request = new LeaveRequest
+                {
+                    EmployeeId = employee.Id,
+                    Type = LeaveType.Annual,
+                    StartDate = NextMonday(DateTime.UtcNow.Date.AddDays(7)),
+                    EndDate = NextMonday(DateTime.UtcNow.Date.AddDays(7)).AddDays(2),
+                    Status = status
+                };
+                db.LeaveRequests.Add(request);
+                db.SaveChanges();
+                return request;
+            }
+
+            private static DateTime NextMonday(DateTime date)
+            {
+                while (date.DayOfWeek != DayOfWeek.Monday)
+                {
+                    date = date.AddDays(1);
+                }
+
+                return date;
+            }
+
+            [Fact]
+            public async Task Create_RecordsSubmissionActorAndStatuses()
+            {
+                using var db = NewInMemoryDb(nameof(Create_RecordsSubmissionActorAndStatuses));
+                var (_, employee, _) = SeedOrg(db);
+                var before = DateTime.UtcNow;
+
+                var result = await CreateController(db).Create(new CreateLeaveRequestDto
+                {
+                    EmployeeId = employee.Id,
+                    Type = LeaveType.Annual,
+                    StartDate = NextMonday(DateTime.UtcNow.Date.AddDays(7)),
+                    EndDate = NextMonday(DateTime.UtcNow.Date.AddDays(7)).AddDays(2),
+                    Reason = "Test submission"
+                });
+
+                Assert.IsType<CreatedAtActionResult>(result.Result);
+                var audit = await db.AuditLogs.SingleAsync();
+                Assert.Equal(employee.Id, audit.ActorEmployeeId);
+                var submittedRequest = await db.LeaveRequests.SingleAsync();
+                Assert.Equal(submittedRequest.Id, audit.LeaveRequestId);
+                Assert.Equal(AuditLogService.LeaveSubmitted, audit.Action);
+                Assert.Equal(LeaveStatus.Draft, audit.PreviousStatus);
+                Assert.Equal(LeaveStatus.PendingSupervisorApproval, audit.NewStatus);
+                Assert.InRange(audit.OccurredAtUtc, before, DateTime.UtcNow);
+            }
+
+            [Theory]
+            [InlineData(true, AuditLogService.SupervisorApproved, LeaveStatus.PendingHrApproval)]
+            [InlineData(false, AuditLogService.SupervisorRejected, LeaveStatus.Rejected)]
+            public async Task SupervisorDecision_RecordsActualActorAndStatuses(
+                bool approve,
+                string expectedAction,
+                LeaveStatus expectedStatus)
+            {
+                using var db = NewInMemoryDb($"{nameof(SupervisorDecision_RecordsActualActorAndStatuses)}_{approve}");
+                var (supervisor, employee, _) = SeedOrg(db);
+                var request = AddRequest(db, employee, LeaveStatus.PendingSupervisorApproval);
+
+                var result = await CreateController(db).SupervisorDecision(request.Id, new LeaveDecisionDto
+                {
+                    DecidedByEmployeeId = supervisor.Id,
+                    Approve = approve
+                });
+
+                Assert.IsType<OkObjectResult>(result);
+                var audit = await db.AuditLogs.SingleAsync();
+                Assert.Equal(supervisor.Id, audit.ActorEmployeeId);
+                Assert.Equal(request.Id, audit.LeaveRequestId);
+                Assert.Equal(expectedAction, audit.Action);
+                Assert.Equal(LeaveStatus.PendingSupervisorApproval, audit.PreviousStatus);
+                Assert.Equal(expectedStatus, audit.NewStatus);
+            }
+
+            [Theory]
+            [InlineData(true, AuditLogService.HrApproved, LeaveStatus.Approved)]
+            [InlineData(false, AuditLogService.HrRejected, LeaveStatus.Rejected)]
+            public async Task HrDecision_RecordsActualActorAndStatuses(
+                bool approve,
+                string expectedAction,
+                LeaveStatus expectedStatus)
+            {
+                using var db = NewInMemoryDb($"{nameof(HrDecision_RecordsActualActorAndStatuses)}_{approve}");
+                var (_, employee, hr) = SeedOrg(db);
+                var request = AddRequest(db, employee, LeaveStatus.PendingHrApproval);
+
+                var result = await CreateController(db).HrDecision(request.Id, new LeaveDecisionDto
+                {
+                    DecidedByEmployeeId = hr.Id,
+                    Approve = approve
+                });
+
+                Assert.IsType<OkObjectResult>(result);
+                var audit = await db.AuditLogs.SingleAsync();
+                Assert.Equal(hr.Id, audit.ActorEmployeeId);
+                Assert.Equal(request.Id, audit.LeaveRequestId);
+                Assert.Equal(expectedAction, audit.Action);
+                Assert.Equal(LeaveStatus.PendingHrApproval, audit.PreviousStatus);
+                Assert.Equal(expectedStatus, audit.NewStatus);
+            }
+
+            [Fact]
+            public async Task Recall_RecordsRequestingActorAndStatuses()
+            {
+                using var db = NewInMemoryDb(nameof(Recall_RecordsRequestingActorAndStatuses));
+                var (_, employee, _) = SeedOrg(db);
+                var request = AddRequest(db, employee, LeaveStatus.PendingSupervisorApproval);
+
+                var result = await CreateController(db).Recall(request.Id, employee.Id);
+
+                Assert.IsType<OkObjectResult>(result);
+                var audit = await db.AuditLogs.SingleAsync();
+                Assert.Equal(employee.Id, audit.ActorEmployeeId);
+                Assert.Equal(request.Id, audit.LeaveRequestId);
+                Assert.Equal(AuditLogService.LeaveRecalled, audit.Action);
+                Assert.Equal(LeaveStatus.PendingSupervisorApproval, audit.PreviousStatus);
+                Assert.Equal(LeaveStatus.Recalled, audit.NewStatus);
+            }
+
+            [Fact]
+            public async Task FailedActions_DoNotCreateAuditRecords()
+            {
+                using var db = NewInMemoryDb(nameof(FailedActions_DoNotCreateAuditRecords));
+                var (supervisor, employee, hr) = SeedOrg(db);
+                var controller = CreateController(db);
+                var supervisorPending = AddRequest(db, employee, LeaveStatus.PendingSupervisorApproval);
+                var hrPending = AddRequest(db, employee, LeaveStatus.PendingHrApproval);
+
+                var invalidSubmission = await controller.Create(new CreateLeaveRequestDto
+                {
+                    EmployeeId = employee.Id,
+                    Type = LeaveType.Annual,
+                    StartDate = new DateTime(2027, 1, 2),
+                    EndDate = new DateTime(2027, 1, 3)
+                });
+                var unauthorizedSupervisorDecision = await controller.SupervisorDecision(
+                    supervisorPending.Id,
+                    new LeaveDecisionDto { DecidedByEmployeeId = hr.Id, Approve = true });
+                employee.AnnualLeaveBalanceDays = 1;
+                var rejectedByBusinessRule = await controller.HrDecision(
+                    hrPending.Id,
+                    new LeaveDecisionDto { DecidedByEmployeeId = hr.Id, Approve = true });
+                var unauthorizedRecall = await controller.Recall(supervisorPending.Id, supervisor.Id);
+
+                Assert.IsType<UnprocessableEntityObjectResult>(invalidSubmission.Result);
+                Assert.IsType<ConflictObjectResult>(unauthorizedSupervisorDecision);
+                Assert.IsType<ConflictObjectResult>(rejectedByBusinessRule);
+                Assert.IsType<ConflictObjectResult>(unauthorizedRecall);
+                Assert.Empty(await db.AuditLogs.ToListAsync());
+        }
+
+        [Fact]
+        public async Task DbSeeder_CreatesAuditTableForExistingDatabase()
+        {
+            using var connection = new SqliteConnection("Data Source=:memory:");
+            await connection.OpenAsync();
+            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using var db = new ApplicationDbContext(options);
+            await db.Database.EnsureCreatedAsync();
+            await db.Database.ExecuteSqlRawAsync("DROP TABLE \"AuditLogs\";");
+
+            DbSeeder.Seed(db);
+
+            Assert.Equal(0, await db.AuditLogs.CountAsync());
         }
     }
 }

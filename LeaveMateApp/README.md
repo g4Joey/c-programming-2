@@ -27,6 +27,29 @@ To target SQL Server instead of the bundled SQLite file, set
 `"UseSqlite": false` in `appsettings.json` and update
 `ConnectionStrings:DefaultConnection`.
 
+## Email notifications
+
+Email is disabled by default. To enable SMTP delivery, configure the
+following environment variables locally and use deployment environment
+settings in production:
+
+| Variable | Required | Description |
+|---|---|---|
+| `Email__Enabled` | Yes | Set to `true` to enable delivery. |
+| `Email__SmtpHost` | Yes | SMTP server host name. |
+| `Email__SmtpPort` | Yes | SMTP server port (defaults to `587`). |
+| `Email__UseSsl` | Yes | Enable TLS/SSL (defaults to `true`). |
+| `Email__FromAddress` | Yes | Valid sender email address. |
+| `Email__FromName` | No | Sender display name (defaults to `LeaveMate`). |
+| `Email__Username` | No | SMTP username, when authentication is required. |
+| `Email__Password` | Conditional | SMTP password, required when a username is configured. |
+
+No SMTP credentials are included in the repository. Messages are sent after
+the leave action is saved; failed delivery is logged and does not undo the
+saved request or audit record. Messages contain the request ID, requester,
+leave type, dates, duration, action, current status, and action time, but omit
+the leave reason.
+
 ## Running the tests
 
 ```bash
