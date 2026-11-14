@@ -62,7 +62,19 @@
                 <button type="submit" class="btn sign-in-submit">Sign in <span aria-hidden="true">→</span></button>
             </form>
 
-            <p class="sign-in-card__note"><span aria-hidden="true">✦</span> Your time away, thoughtfully organized.</p>
+            <div class="demo-accounts" aria-labelledby="demo-accounts-heading">
+                <h3 id="demo-accounts-heading">Demo accounts</h3>
+                <p>All accounts use the password <code>@LeaveMate.Data.DbSeeder.DemoPassword</code></p>
+                <ul>
+                    <li><code>ama.boateng@leavemate.local</code> <span>HR Administrator</span></li>
+                    <li><code>kojo.mensah@leavemate.local</code> <span>Manager</span></li>
+                    <li><code>jane.mensah@leavemate.local</code> <span>Employee</span></li>
+                    <li><code>kendall.brooks@leavemate.local</code> <span>Employee</span></li>
+                    <li><code>james.agyemang@leavemate.local</code> <span>Employee</span></li>
+                </ul>
+            </div>
+
+            <p class="sign-in-card__note">New to LeaveMate? <a href="/Account/SignUp">Create an account</a></p>
         </div>
         <span class="sign-in-panel__copyright">© @DateTime.Now.Year LeaveMate</span>
     </section>
