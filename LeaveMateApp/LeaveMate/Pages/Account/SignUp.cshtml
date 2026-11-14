@@ -1,0 +1,63 @@
+@page
+@model LeaveMate.Pages.Account.SignUpModel
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<div class="sign-in-page">
+    <section class="sign-in-intro" aria-labelledby="sign-in-heading">
+        <a class="sign-in-brand" href="/" aria-label="LeaveMate home">
+            <span class="sign-in-brand__mark" aria-hidden="true">L</span>
+            <span>LeaveMate</span>
+        </a>
+
+        <div class="sign-in-intro__content">
+            <span class="sign-in-eyebrow">LEAVE MANAGEMENT, MADE SIMPLE</span>
+            <h1 id="sign-in-heading">Make time for what matters.</h1>
+            <p>Plan time away with clarity. Keep requests, approvals, and team coverage together in one calm, connected workspace.</p>
+        </div>
+
+        <span class="sign-in-intro__footer">A little more balance, every day.</span>
+        <span class="sign-in-decoration sign-in-decoration--ring" aria-hidden="true"></span>
+        <span class="sign-in-decoration sign-in-decoration--dot" aria-hidden="true"></span>
+    </section>
+
+    <section class="sign-in-panel" aria-labelledby="sign-in-form-heading">
+        <div class="sign-in-card">
+            <span class="sign-in-card__eyebrow">JOIN YOUR TEAM</span>
+            <h2 id="sign-in-form-heading">Create your account</h2>
+            <p class="sign-in-card__description">Sign up to start requesting leave in LeaveMate.</p>
+
+            <form method="post" class="sign-in-form" novalidate>
+                <div class="form-field">
+                    <label asp-for="FullName">Full name</label>
+                    <input asp-for="FullName" autocomplete="name" placeholder="Your full name" autofocus />
+                    <span asp-validation-for="FullName" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="Email">Work email</label>
+                    <input asp-for="Email" type="email" autocomplete="username" placeholder="you@company.com" />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="Password">Password</label>
+                    <input asp-for="Password" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="ConfirmPassword">Confirm password</label>
+                    <input asp-for="ConfirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password" />
+                    <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+                </div>
+
+                <button type="submit" class="btn sign-in-submit">Create account <span aria-hidden="true">→</span></button>
+            </form>
+
+            <p class="sign-in-card__note">Already have an account? <a href="/Account/Login">Sign in</a></p>
+        </div>
+        <span class="sign-in-panel__copyright">© @DateTime.Now.Year LeaveMate</span>
+    </section>
+</div>

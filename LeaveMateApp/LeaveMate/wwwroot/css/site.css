@@ -443,6 +443,43 @@ button.btn--secondary { background: var(--color-muted); }
     line-height: 1;
 }
 
+.demo-accounts {
+    margin-top: 1.5rem;
+    padding: 1rem 1.1rem;
+    border: 1px dashed #b9c8be;
+    border-radius: 12px;
+    background: #f4f8f5;
+    color: #3f4f45;
+    font-size: 0.82rem;
+}
+
+.demo-accounts h3 {
+    margin: 0 0 0.35rem;
+    font-size: 0.9rem;
+}
+
+.demo-accounts p {
+    margin: 0 0 0.6rem;
+}
+
+.demo-accounts ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.demo-accounts li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    padding: 0.2rem 0;
+}
+
+.demo-accounts li span {
+    color: #78877d;
+}
+
 .sign-in-card__note {
     margin: 1.75rem 0 0;
     color: #78877d;
